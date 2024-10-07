@@ -1,0 +1,298 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    height: calc(100vh - 40px); /* 減去上下的 margin 高度 */
+    margin: 20px 0; /* 上下距離 20px，左右距離 0 */
+    position: relative; /* 滾動用 */
+  }
+  
+  html {
+    scroll-behavior: smooth;  /* 使網頁滾動 */
+  }
+  
+  
+  
+  /* 側邊欄 */
+  .icon-text {
+    margin-left: 10px; /* 设置左边距以创建空间 */
+    font-size: 20px; 
+  }
+  
+  ion-icon{
+    font-size: 20px; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+  
+  
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 20%;
+    height: 100vh;
+    background-color: #fff1f1;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 1000;
+    flex-direction: column;/* 鏈接和圖片會垂直排列 */
+  }
+  
+  /* SVG 图标的颜色 */
+  #sidebar svg {
+    fill: #d8d8f5;
+  }
+  
+  /* 鼠标悬停时的效果 */
+  #sidebar a {
+    color: #787b7d; /* 文字颜色 */
+    text-decoration: none; /* 去掉下划线 */
+  }
+  
+  /* 鼠标悬停时 */
+  #sidebar a:hover {
+    color: #9994f6; /* 悬停时的文字颜色 */
+  }
+  
+  /* 点击时的效果 */
+  #sidebar a.active {
+    color: #9994f6; /* 激活时的文字颜色 */
+    background-color: #9994f6; /* 激活背景色 */
+    border-left: 5px solid #9994f6; /* 左侧边框 */
+  }
+  
+          /* 按钮变化样式 */
+          .btn-change {
+            display: none; /* 默认隐藏 */
+        }
+  
+        /* Scrollspy 激活时按钮样式 */
+        .active-button {
+            display: inline-block; /* 显示按钮 */
+            background-color: #9994f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+  
+  
+  
+  .img-container {
+    margin-top: auto; /* 將圖片容器推到側邊欄底部 */
+  }
+  /* 側邊欄 */
+  
+  
+  
+  
+  
+  .content {
+    padding: 20px; /* 内容内边距 */
+    margin-left: 100px;
+  }
+  
+  
+  
+  
+  /* 表單 */
+  fieldset {
+    border: 1px solid #8d8c8c !important;  /* 邊框樣式回到默認 */
+    padding: 10px !important;                      /*默認內邊距 */
+    font-size: 16px !important;
+  }
+  
+  legend{
+    font-size: 14px !important;  /* 或者使用你想要的字體大小 */
+  }
+  
+  
+  
+  .N_type {
+    font-size: 0.9em !important;
+    font-weight: bold !important;
+    color: #ffffff !important;
+    padding: 0 5px !important;
+    background-color: #E6A4B4 !important;
+    padding: 3px 6px !important;
+    text-align: center !important;
+    display: block !important;
+    width: 80% !important;
+  }
+  
+  
+  
+  
+  
+  .form-container {
+    display: flex;
+  }
+  
+  .form-area {
+    width: 300px;
+    height: auto; /* 高度自動調整 */
+    overflow-wrap: break-word; /* 如果內容太長，則進行換行 */
+    transition: height 0.3s ease; /* 添加平滑过渡效果 */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff; /* 表单区域背景色 */
+      padding: 20px; /* 内边距 */
+      border-radius: 5px; /* 圆角 */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 阴影 */
+  
+    
+  }
+  
+  .form-area h2 {
+    text-align: center;
+  }
+  
+  .form-group {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px !important;
+  }
+  
+  .form-group label {
+    width: 40%;
+    text-align: right;
+    margin-right: 10px;
+    font-size: 14px !important;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 55%;
+    font-size: 14px !important;
+  }
+  
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    /* 允許換行 */
+    width: 60%;
+    /* 調整寬度以保持對齊 */
+  }
+  
+  .checkbox-group label {
+    margin-right: 10px;
+    /* 複選框之間的間距 */
+    display: inline-block;
+    /* 在同一行顯示 */
+  }
+  
+  .submit-button {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .submit-button button {
+    padding: 8px 16px;
+    font-size: 16px;
+  }
+  
+  .result {
+    margin-left: 20px;
+    margin-right: 10px;
+    width: 280px;
+    white-space: pre-wrap; /* 保持換行 */
+    border: 1px solid #000;
+    padding: 10px;
+    height: auto; /* 高度自動調整 */
+    overflow-wrap: break-word; /* 如果內容太長，則進行換行 */
+    border-radius: 8px; /* 設定圓角 */
+    transition: height 0.2s; /* 添加過渡效果 */
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /* 按鈕 */
+  
+
+  .button-container {
+    text-align: center; /* 將按鈕置中 */
+    margin-top: 20px;   /* 按鈕與上方內容的間距 */
+    
+  }
+  
+.black-border-button {
+    border: 1px solid black; /* 黑色邊框 */
+    background-color: white; /* 白色背景 */
+    color: black; /* 黑色文字 */
+    padding: 5px 10px; /* 內距 */
+    font-size: 16px; /* 字體大小 */
+    cursor: pointer; /* 滑鼠指標變成手形 */
+    border-radius: 3px; /* 圓角 */
+    transition: background-color 0.3s, color 0.3s; /* 動態效果 */
+    margin-bottom: 20px; /* 設定下邊距 */
+    text-decoration: none; /* 去掉默认的下划线 */
+    text-align: center; /* 將按鈕置中 */
+ 
+  }
+  
+  .black-border-button:hover {
+    background-color: #E6A4B4; /* 滑鼠懸停時的背景 */
+    color: rgb(255, 255, 255); /* 滑鼠懸停時的文字顏色 */
+    text-decoration: none; /* 去掉默认的下划线 */
+  }
+
+
+    
+#code-container {
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.highlight-yellow {
+  background-color: #FFD09B !important;
+}
+
+.highlight-green {
+  background-color: lightgreen !important;
+}
+
+.highlight-purple { 
+  background-color: #9994f6 !important;
+}
+
+.highlight-pink { 
+  background-color: #E6A4B4 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+  
