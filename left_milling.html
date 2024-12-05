@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,121 +9,133 @@
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
-            gap: 10px;
+        }
+
+        .container,
+        .output-container {
             padding: 20px;
-            box-sizing: border-box;
-        }
-        .container, .output-container {
             flex: 1;
-            max-width: 25%;
-            box-sizing: border-box;
         }
+
         .output-container {
             background-color: #f9f9f9;
             border-left: 1px solid #ccc;
-            padding: 20px;
         }
-        .form-group {
-            display: flex;
-            margin: 10px 0;
-        }
-        .form-group .label {
-            flex: 1;
-            font-size: 16px;
-            white-space: nowrap;
-            padding-right: 10px;
-        }
-        .form-group .input-container {
-            flex: 2;
-            display: flex;
-            align-items: center;
-        }
-        .form-group input[type="radio"] {
-            margin: 0 5px;
-        }
-        .form-group input[type="number"],
-        .form-group input[type="text"],
-        .form-group select {
-            width: 100%;
-            font-size: 16px;
-        }
+
+        label,
+        input,
+        select,
         button {
             display: block;
             width: 100%;
             margin: 10px 0;
             font-size: 16px;
         }
+
+
+
         textarea {
+            width: 280px;
+            height: auto;
+            /* 高度自動調整 */
+            border: 2px solid #000000;
+            /* 设置边框 */
+            border-radius: 8px;
+            /* 添加圆角 */
+            resize: none;
+            /* 禁止用户手动调整大小 */
             background-color: #f8f8f8;
             padding: 10px;
-            border-radius: 4px;
-            width: calc(100% - 10px);
+            font-size: 16px;
             box-sizing: border-box;
-            min-height: 500px;
+            /* 确保内外尺寸一致 */
+            overflow-wrap: break-word;
+            /* 如果內容太長，則進行換行 */
+            transition: height 0.2s;
+            /* 添加過渡效果 */
+        }
+
+        .form-area {
+            width: 300px;
             height: auto;
-            resize: none;
-            overflow-y: hidden;
+            /* 高度自動調整 */
+            overflow-wrap: break-word;
+            /* 如果內容太長，則進行換行 */
+            transition: height 0.3s ease;
+            /* 添加平滑过渡效果 */
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            /* 表单区域背景色 */
+            padding: 20px;
+            /* 内边距 */
+            border-radius: 5px;
+            /* 圆角 */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            /* 阴影 */
+
+
+        }
+
+        .form-area h2 {
+            text-align: center;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>左铣生成器簡化版1.0</h1>
-        <div class="form-group">
-            <div class="label">寬度 (X向):</div>
-            <div class="input-container">
-                <input type="number" id="width" name="width" step="0.001" value="50">
-            </div>
+        <div class="form-area">
+            <h2>左铣生成器簡化版1.0</h2>
+            <label for="width">寬度 (X向):</label>
+            <input type="number" id="width" name="width" step="0.001" value="50">
+            <label for="height">高度 (Y向):</label>
+            <input type="number" id="height" name="height" step="0.001" value="50">
+            <label for="roughing_allowance">粗挖預留量:</label>
+            <input type="number" id="roughing_allowance" name="roughing_allowance" step="0.001" value="5.0">
+            <label for="depths">分層深度 (使用逗號分隔):</label>
+            <input type="text" id="depths" name="depths" value="-10,-20">
+            <label for="enable_roughing">啟用粗修:</label>
+            <select id="enable_roughing">
+                <option value="true">是</option>
+                <option value="false">否</option>
+            </select>
+            <label for="rough_feed">粗修進給速度 F:</label>
+            <input type="number" id="rough_feed" name="rough_feed" step="0.1" value="80">
+            <label for="finish_feed">精修進給速度 F:</label>
+            <input type="number" id="finish_feed" name="finish_feed" step="0.1" value="400">
+            <button onclick="generateGCode()">生成 G 代碼</button>
+            <button id="copy-gcode-button">複製 G 代碼</button>
         </div>
-        <div class="form-group">
-            <div class="label">高度 (Y向):</div>
-            <div class="input-container">
-                <input type="number" id="height" name="height" step="0.001" value="50">
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="label">粗挖預留量:</div>
-            <div class="input-container">
-                <input type="number" id="roughing_allowance" name="roughing_allowance" step="0.001" value="5.0">
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="label">分層深度 (使用逗號分隔):</div>
-            <div class="input-container">
-                <input type="text" id="depths" name="depths" value="-10,-20">
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="label">啟用粗修:</div>
-            <div class="input-container">
-                <input type="radio" id="enable_roughing_yes" name="enable_roughing" value="true">
-                <label for="enable_roughing_yes">是</label>
-                <input type="radio" id="enable_roughing_no" name="enable_roughing" value="false">
-                <label for="enable_roughing_no">否</label>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="label">粗修進給速度 F:</div>
-            <div class="input-container">
-                <input type="number" id="rough_feed" name="rough_feed" step="0.1" value="80">
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="label">精修進給速度 F:</div>
-            <div class="input-container">
-                <input type="number" id="finish_feed" name="finish_feed" step="0.1" value="400">
-            </div>
-        </div>
-        <button onclick="generateGCode()">生成 G 代碼</button>
-        <button id="copy-gcode-button">複製 G 代碼</button>
     </div>
+
+
+
+
     <div class="output-container">
         <h2>生成的 G 代碼</h2>
         <textarea id="gcode-output" readonly></textarea>
     </div>
-
     <script>
+
+        function adjustTextareaHeight() {
+            const formArea = document.querySelector('.form-area');
+            const gcodeOutput = document.getElementById('gcode-output');
+            gcodeOutput.style.height = `${formArea.offsetHeight}px`; // 將文字框高度設為表單區域高度
+        }
+
+        // 在 DOM 加載完成後調整高度
+        document.addEventListener('DOMContentLoaded', () => {
+            adjustTextareaHeight();
+        });
+
+        // 在窗口大小改變時調整高度
+        window.addEventListener('resize', adjustTextareaHeight);
+
+
+
         function generateGCode() {
             let width = document.getElementById('width').value;
             let height = document.getElementById('height').value;
@@ -153,7 +166,7 @@
                     gcode.push(`G1G91X${(width - roughingAllowance).toFixed(3)} F${roughFeed}`);
                     gcode.push(`G1G91Y-${(height - 2 * roughingAllowance).toFixed(3)} F${roughFeed}`);
                     gcode.push(`G1G91X-${(width - roughingAllowance).toFixed(3)} F${roughFeed}`);
-                    gcode.push(`G1G91Y${(height - roughingAllowance).toFixed(3)} F500(fast move)`);
+                    gcode.push(`G1G91Y${(height - roughingAllowance).toFixed(3)} F500(move)`);
                     gcode.push(`(粗修結束)`);
                 }
 
@@ -161,30 +174,23 @@
                 gcode.push(`G1G91X${width} F${finishFeed}`);
                 gcode.push(`G1G91Y-${height}F${finishFeed}`);
                 gcode.push(`G1G91X-${width} F${finishFeed}`);
-                gcode.push(`G1G91Y${height}F500(fast move)`);
+                gcode.push(`G1G91Y${height}F500(move)`);
                 gcode.push(`(精修結束)`);
             });
 
             let gcodeOutput = document.getElementById('gcode-output');
             gcodeOutput.value = gcode.join("\n");
-            adjustTextareaHeight(gcodeOutput);
         }
 
-        function adjustTextareaHeight(textarea) {
-            textarea.style.height = 'auto'; 
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        }
-
-        document.getElementById("gcode-output").addEventListener('input', function() {
-            adjustTextareaHeight(this);
-        });
-
-        document.getElementById("copy-gcode-button").onclick = function() {
+        document.getElementById("copy-gcode-button").onclick = function () {
             let gcodeText = document.getElementById("gcode-output").value;
-            navigator.clipboard.writeText(gcodeText).then(function() {
+            navigator.clipboard.writeText(gcodeText).then(function () {
                 alert("G代碼已經複製!");
             });
         };
+
+
     </script>
 </body>
+
 </html>
