@@ -277,7 +277,7 @@ G43<span style="background-color: #FFD09B">${correctionH}</span>Z100.
 <span style="background-color: #CDC1FF">Z${drillUpZ}.</span>M8
 G98G81<span style="background-color: #84C1FF">Z${depthZ}.</span>R${drillHeightR}.F${feedSpeedF}
 
-(EX: X159.9999 Y-48.8390 ( 22 ))
+(EX: X159.9999 Y-48.8390)(22)
 (!!) 
 ${coordinates} 
 
