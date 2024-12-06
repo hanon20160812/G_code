@@ -276,9 +276,9 @@ G0G90<span class="highlight-green">${coordinateG}</span><span class="coordinate-
 G43<span class="highlight-yellow">${correctionH}</span>Z70.
 M8
 M1
-G0G90Z-5.(安全降刀)
+G0G90Z30.(安全降刀)
 M1
-G0G90Z-10.(安全降刀)
+G0G90Z10.(安全降刀)
 M1
 
 
