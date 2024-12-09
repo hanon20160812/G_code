@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>型號計算機</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .form-area {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            /* 每行之间的间距 */
+        }
+
+        .form-area h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-area label {
+            display: inline-block;
+            width: 90px;
+            /* 固定 label 的宽度 */
+            text-align: right;
+            /* 文字靠右对齐 */
+            margin-right: 10px;
+            /* 与 input 的间距 */
+        }
+
+        .form-area input,
+        .form-area select,
+        .form-area button {
+            flex: 1;
+            /* 输入框或按钮自动填满剩余宽度 */
+        }
+
+        .form-area .form-row {
+            display: flex;
+            align-items: center;
+            /* 垂直居中对齐 */
+        }
+
+        .inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin: 0;
+        }
+
+        input,
+        select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            width: 300px;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="form-area">
+            <h2>型號計算機</h2>
+
+            <div class="inline">
+                <label for="model">型號</label>
+                <select id="model" onchange="updateSizeOptions()">
+                    <option value="476">476</option>
+                    <option value="493">493</option>
+                    <option value="510">510</option>
+                    <option value="587">587</option>
+                    <option value="588">588</option>
+                    <option value="591">591</option>
+                    <option value="622">622</option>
+                </select>
+            </div>
+
+            <div class="inline">
+                <label for="size">尺寸</label>
+                <select id="size">
+                    <!-- 尺寸選項將動態生成 -->
+                </select>
+            </div>
+
+            <div class="inline">
+                <label for="quantity">數量</label>
+                <input type="number" id="quantity" placeholder="輸入數量" min="1">
+            </div>
+
+
+            <button onclick="calculateResult()">計算</button>
+        </div>
+
+        <div id="result" class="result" hidden>
+            <strong>計算結果：</strong> <span id="output"></span>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            "476": [
+                { size: 1836, weight: 5.536 },
+                { size: 1728.7, weight: 5.536 }
+            ],
+            "493": [
+                { size: 1796, weight: 4.322 },
+                { size: 1688.7, weight: 4.322 }
+            ],
+            "510": [
+                { size: 1866, weight: 8.603 },
+                { size: 1758.7, weight: 8.603 }
+            ],
+
+            "587": [
+                { size: 4450, weight: 6.651 },
+                { size: 4125, weight: 6.651 }
+            ],
+            "588": [
+                { size: 4450, weight: 6.127 },
+                { size: 4125, weight: 6.127 }
+            ],
+
+            "591": [
+                { size: 1836, weight: 7.679 },
+                { size: 1728.7, weight: 7.679 }
+            ],
+            "622": [
+                { size: 1864, weight: 1.652 },
+                { size: 1756.7, weight: 1.652 }
+            ]
+        };
+
+        function updateSizeOptions() {
+            const model = document.getElementById('model').value;
+            const sizeSelect = document.getElementById('size');
+            sizeSelect.innerHTML = '';
+
+            if (data[model]) {
+                data[model].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.size;
+                    option.textContent = item.size;
+                    sizeSelect.appendChild(option);
+                });
+            }
+        }
+
+        function calculateResult() {
+            const model = document.getElementById('model').value;
+            const size = parseFloat(document.getElementById('size').value);
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+            if (!size || quantity < 1) {
+                alert('請輸入有效的尺寸和數量');
+                return;
+            }
+
+            const modelData = data[model];
+            if (!modelData) {
+                alert('該型號未找到對應的數據');
+                return;
+            }
+
+            const matchingItem = modelData.find(item => item.size === size);
+            if (!matchingItem) {
+                alert('未找到與該尺寸匹配的型號數據');
+                return;
+            }
+
+            const weight = matchingItem.weight;
+            const result = (size / 1000) * weight * quantity;
+
+            document.getElementById('output').textContent = result.toFixed(1) + ' kg';
+            document.getElementById('result').hidden = false;
+        }
+
+        // 初始化尺寸選單
+        updateSizeOptions();
+    </script>
+</body>
+
+</html>
