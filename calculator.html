@@ -36,8 +36,31 @@
         }
 
         select option {
-            color: black;
+            color: rgb(0, 0, 0);
         }
+
+        .btn-cute {
+            background-color: #ff607e;
+            color: #ffffff;
+            border: 1px solid #ff607e;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-cute:hover {
+            background-color: #ffffff;
+            border: 1px solid #ff607e;
+            transform: translateY(-2px);
+        }
+
+        .btn-cute:active {
+            background-color: #ffffff;
+            border: 1px solid #ff607e;
+            transform: translateY(0);
+        }
+
     </style>
 </head>
 
@@ -50,20 +73,19 @@
                     <label for="model" class="col-sm-3 col-form-label">型號</label>
                     <div class="col-sm-9">
                         <select id="model" class="form-select" onchange="updateSizeOptions()">
-                            <optgroup label="中橫料">
-                                <option value="476">476</option>
-                                <option value="493">493</option>
-                            </optgroup>
-                            <optgroup label="上橫料">
-                                <option value="510">510</option>
-                            </optgroup>
+
                             <optgroup label="直料">
                                 <option value="587">587</option>
                                 <option value="588">588</option>
                             </optgroup>
-                            <optgroup label="下橫料">
+
+                            <optgroup label="橫料">
+                                <option value="476">476</option>
+                                <option value="493">493</option>
+                                <option value="510">510</option>
                                 <option value="591">591</option>
                             </optgroup>
+ 
                             <optgroup label="蓋板">
                                 <option value="622">622</option>
                             </optgroup>
@@ -89,7 +111,7 @@
                 </div>
 
                 <div class="text-center">
-                    <button type="button" class="btn btn-primary" onclick="calculateResult()">計算</button>
+                    <button type="button" class="btn btn-cute" onclick="calculateResult()">計算</button>
                 </div>
             </form>
         </div>
