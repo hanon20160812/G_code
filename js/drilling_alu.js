@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <div class="form-group">
 <label for="programEndX">結束位置X：</label>
-<input type="text" id="programEndX" name="programEndX" placeholder="輸入程式結束位置X" value="(G0G90X-100)"> 
+<input type="text" id="programEndX" name="programEndX" placeholder="輸入程式結束位置X" value="(G0G90X-100.)"> 
 </div>
 
 
