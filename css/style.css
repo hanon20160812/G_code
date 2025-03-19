@@ -315,3 +315,38 @@ background-color: #E6A4B4 !important;
 
 
 
+        /* 大屏幕樣式 */
+        body {
+          font-size: 16px;
+      }
+
+      /* 中等屏幕樣式 */
+      @media (max-width: 1024px) {
+          body {
+              font-size: 14px;
+          }
+      }
+
+      /* 小屏幕樣式 */
+      @media (max-width: 768px) {
+          body {
+              font-size: 12px;
+          }
+
+          .container {
+              padding: 10px;
+          }
+
+          .form-container {
+              padding: 10px;
+          }
+
+          .form-group {
+              margin-bottom: 10px;
+          }
+      }
+
+      img {
+          max-width: 100%;
+          height: auto;
+      }
