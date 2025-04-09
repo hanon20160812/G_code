@@ -52,95 +52,182 @@
 
         .btn-cute:hover {
             background-color: #ffffff;
+            color: #ff607e;
             border: 1px solid #ff607e;
             transform: translateY(-2px);
         }
 
         .btn-cute:active {
             background-color: #ffffff;
+            color: #ff607e;
             border: 1px solid #ff607e;
             transform: translateY(0);
+        }
+
+        .profile-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            margin-top: 20px;
+        }
+
+        /* 響應式布局 */
+        @media (min-width: 992px) {
+            .calculator-container {
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+            }
+            
+            .calculator-form {
+                flex: 1;
+                order: 2; /* 改變順序，計算機放右邊 */
+            }
+            
+            .profile-container {
+                flex: 1;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                order: 1; /* 改變順序，圖片放左邊 */
+            }
+        }
+        
+        @media (max-width: 991px) {
+            .calculator-container {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .profile-container {
+                margin-top: 20px;
+                display: flex;
+                justify-content: center;
+            }
+        }
+        
+        .or-divider {
+            text-align: center;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .or-divider:before, .or-divider:after {
+            content: '';
+            display: inline-block;
+            width: 40%;
+            height: 1px;
+            background: #ccc;
+            vertical-align: middle;
+            margin: 0 10px;
         }
     </style>
 </head>
 
 <body translate="no">
     <div class="container my-5">
-        <div class="form-area">
-            <h2 class="text-center mb-4">擠型計算機</h2>
-            <form>
-                <div class="mb-3 row align-items-center">
-                    <label for="model" class="col-sm-3 col-form-label">型號</label>
-                    <div class="col-sm-9">
-                        <select id="model" class="form-select" onchange="updateSizeOptions()">
-                            <optgroup label="直料">
-                                <option value="587">587</option>
-                                <option value="588">588</option>
-                            </optgroup>
-                            <optgroup label="橫料">
-                                <option value="476">476</option>
-                                <option value="493">493</option>
-                                <option value="510">510</option>
-                                <option value="591">591</option>
-                            </optgroup>
+        <div class="calculator-container">
+            <div class="calculator-form">
+                <div class="form-area">
+                    <h2 class="text-center mb-4">擠型計算機</h2>
+                    <form>
+                        <div class="mb-3 row align-items-center">
+                            <label for="model" class="col-sm-3 col-form-label">型號</label>
+                            <div class="col-sm-9">
+                                <select id="model" class="form-select" onchange="updateSizeOptions()">
+                                    <optgroup label="直料">
+                                        <option value="587">587</option>
+                                        <option value="588">588</option>
+                                    </optgroup>
+                                    <optgroup label="橫料">
+                                        <option value="476">476</option>
+                                        <option value="493">493</option>
+                                        <option value="510">510</option>
+                                        <option value="591">591</option>
+                                    </optgroup>
 
-                            <optgroup label="蓋板">
-                                <option value="590">590玻璃壓條</option>
-                                <option value="622">622中橫料玻璃蓋板</option>
-                            </optgroup>
+                                    <optgroup label="蓋板">
+                                        <option value="590">590玻璃壓條</option>
+                                        <option value="622">622中橫料玻璃蓋板</option>
+                                    </optgroup>
 
-                            <optgroup label="常用配件">
-                                <option value="603">603</option>
-                                <option value="608">608</option>
-                                <option value="615">615</option>
-                                <option value="620">620</option>
-                            </optgroup>
+                                    <optgroup label="常用配件">
+                                        <option value="603">603</option>
+                                        <option value="608">608</option>
+                                        <option value="615">615</option>
+                                        <option value="620">620</option>
+                                    </optgroup>
 
-                            <optgroup label="配件">
-                                <option value="625">625轉角鋁板固定</option>
-                            </optgroup>                           
+                                    <optgroup label="配件">
+                                        <option value="625">625轉角鋁板固定</option>
+                                    </optgroup>                           
 
-                            <optgroup label="欄杆">
-                                <option value="653">653欄杆公</option>
-                                <option value="654">654欄杆母</option>
-                            </optgroup>
-                            <optgroup label="轉角">
-                                <option value="015">015轉角直料</option>
-                                <option value="626">626轉角併料</option>
-                                <option value="624">624轉角蓋板</option>
-                            </optgroup>
-                            <optgroup label="格柵">
-                                <option value="473N">473N</option>
-                            </optgroup>
-                        </select>
-
+                                    <optgroup label="欄杆">
+                                        <option value="653">653欄杆公</option>
+                                        <option value="654">654欄杆母</option>
+                                    </optgroup>
+                                    <optgroup label="轉角">
+                                        <option value="015">015轉角直料</option>
+                                        <option value="626">626轉角併料</option>
+                                        <option value="624">624轉角蓋板</option>
+                                    </optgroup>
+                                    <optgroup label="格柵">
+                                        <option value="473N">473N</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="row align-items-center">
+                                <label for="size" class="col-sm-3 col-form-label">預設尺寸</label>
+                                <div class="col-sm-9">
+                                    <select id="size" class="form-select" onchange="onSizeChange()">
+                                        <!-- 尺寸選項將動態生成 -->
+                                    </select>
+                                    <small id="hint" class="text-muted mt-2">無提示</small>
+                                </div>
+                            </div>
+                            
+                            <div class="or-divider">或</div>
+                            
+                            <div class="row align-items-center">
+                                <label for="customSize" class="col-sm-3 col-form-label">自訂尺寸</label>
+                                <div class="col-sm-9">
+                                    <input type="number" id="customSize" class="form-control" placeholder="輸入自訂尺寸" step="0.1" min="0">
+                                    <small class="text-muted mt-2">手動輸入尺寸（會使用所選型號的單位重量計算）</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 row align-items-center">
+                            <label for="quantity" class="col-sm-3 col-form-label">數量</label>
+                            <div class="col-sm-9">
+                                <input type="number" id="quantity" class="form-control" placeholder="輸入數量" min="1">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" class="btn btn-cute" onclick="calculateResult()">計算</button>
+                            <button type="button" class="btn btn-secondary ms-2" onclick="clearForm()">清空</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="result" class="result mt-4" hidden>
+                    <div class="alert alert-info">
+                        <strong>計算結果：</strong>
+                        <div id="output"></div>
                     </div>
                 </div>
-                <div class="mb-3 row align-items-center">
-                    <label for="size" class="col-sm-3 col-form-label">尺寸</label>
-                    <div class="col-sm-9">
-                        <select id="size" class="form-select" onchange="onSizeChange()">
-                            <!-- 尺寸選項將動態生成 -->
-                        </select>
-                        <small id="hint" class="text-muted mt-2">無提示</small>
-                    </div>
-                </div>
-                <div class="mb-3 row align-items-center">
-                    <label for="quantity" class="col-sm-3 col-form-label">數量</label>
-                    <div class="col-sm-9">
-                        <input type="number" id="quantity" class="form-control" placeholder="輸入數量" min="1">
-                    </div>
-                </div>
-                <div class="text-center">
-                    <button type="button" class="btn btn-cute" onclick="calculateResult()">計算</button>
-                </div>
-            </form>
-        </div>
-        <div id="result" class="result mt-4" hidden>
-            <strong>計算結果：</strong>
-            <div id="output"></div>
+            </div>
+            
+            <div class="profile-container">
+                <img id="profile-image" class="profile-image" src="/api/placeholder/400/300" alt="型號示意圖" style="display: none;">
+            </div>
         </div>
     </div>
+    
     <!-- 引入 Bootstrap 的 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -208,9 +295,6 @@
             "625": [
                 { size: 1, weight:0.994},
             ],
-
-
-
             "626": [
                 { size: 4450, weight: 4.688 },
                 { size: 4125, weight: 4.688 },
@@ -286,7 +370,6 @@
             "625": {
                 1: "料號：X"
             },
-
             "590": {
                 3213.5: "料號：1R、1L"
             },
@@ -314,11 +397,37 @@
             }
         };
 
+        // 示意圖映射 - 使用img資料夾中的圖片
+        const profileImages = {
+            "493": "img/493.jpg", // 圖片放在img資料夾
+            "476": "img/476.jpg",
+            "510": "img/510.jpg",
+            "587": "img/587.jpg",
+            "588": "img/588.jpg",
+            "591": "img/591.jpg",
+            "622": "img/622.jpg",
+            "603": "img/603.jpg",
+            "608": "img/608.jpg",
+            "615": "img/615.jpg",
+            "620": "img/620.jpg",
+            "590": "img/590.jpg",
+            "015": "img/015.jpg",
+            "625": "img/625.jpg",
+            "626": "img/626.jpg",
+            "654": "img/654.jpg",
+            "653": "img/653.jpg",
+            "624": "img/624.jpg",
+            "473N": "img/473N.jpg"
+        };
+
         function updateSizeOptions() {
             const model = document.getElementById('model').value;
             const sizeSelect = document.getElementById('size');
             const hintDiv = document.getElementById('hint');
+            const customSizeInput = document.getElementById('customSize');
             const quantityInput = document.getElementById('quantity');
+            const profileImg = document.getElementById('profile-image');
+            
             sizeSelect.innerHTML = '';
 
             if (data[model]) {
@@ -330,29 +439,40 @@
                 });
 
                 // 顯示第一個尺寸的提示（如果有）
-                const firstSize = data[model][0] ?.size;
-                hintDiv.textContent = hints[model] ?.[firstSize] || "無提示";
+                const firstSize = data[model][0]?.size;
+                hintDiv.textContent = hints[model]?.[firstSize] || "無提示";
+            }
+
+            // 顯示型號對應的示意圖
+            if (profileImages[model]) {
+                profileImg.src = profileImages[model];
+                profileImg.alt = `${model} 型號示意圖`;
+                profileImg.style.display = 'block';
+            } else {
+                profileImg.style.display = 'none';
             }
 
             // 清空計算結果
             clearResult();
 
-            // 清空數量欄位
+            // 清空數量和自訂尺寸欄位
             quantityInput.value = '';
+            customSizeInput.value = '';
         }
 
         function onSizeChange() {
             const model = document.getElementById('model').value;
             const size = document.getElementById('size').value;
             const hintDiv = document.getElementById('hint');
-            const quantityInput = document.getElementById('quantity');
-            hintDiv.textContent = hints[model] ?.[size] || "無提示";
-
+            const customSizeInput = document.getElementById('customSize');
+            
+            hintDiv.textContent = hints[model]?.[size] || "無提示";
+            
+            // 清空自訂尺寸欄位
+            customSizeInput.value = '';
+            
             // 清空計算結果
             clearResult();
-
-            // 清空數量欄位
-            quantityInput.value = '';
         }
 
         function clearResult() {
@@ -362,11 +482,27 @@
 
         function calculateResult() {
             const model = document.getElementById('model').value;
-            const size = parseFloat(document.getElementById('size').value);
-            const quantity = parseInt(document.getElementById('quantity').value, 10);
+            const sizeSelect = document.getElementById('size');
+            const customSizeInput = document.getElementById('customSize');
+            const quantityInput = document.getElementById('quantity');
+            
+            // 檢查是使用預設尺寸還是自訂尺寸
+            let size;
+            if (customSizeInput.value) {
+                size = parseFloat(customSizeInput.value);
+            } else {
+                size = parseFloat(sizeSelect.value);
+            }
+            
+            const quantity = parseInt(quantityInput.value, 10);
 
-            if (!size || quantity < 1) {
-                alert('請輸入有效的尺寸和數量');
+            if (!size || isNaN(size) || size <= 0) {
+                alert('請輸入有效的尺寸');
+                return;
+            }
+            
+            if (!quantity || isNaN(quantity) || quantity < 1) {
+                alert('請輸入有效的數量');
                 return;
             }
 
@@ -376,25 +512,72 @@
                 return;
             }
 
-            const matchingItem = modelData.find(item => item.size === size);
-            if (!matchingItem) {
-                alert('未找到與該尺寸匹配的型號數據');
-                return;
+            // 如果是自訂尺寸，使用該型號的第一個尺寸的重量數據
+            let weight;
+            if (customSizeInput.value) {
+                weight = modelData[0].weight;
+            } else {
+                const matchingItem = modelData.find(item => item.size === size);
+                if (!matchingItem) {
+                    alert('未找到與該尺寸匹配的型號數據');
+                    return;
+                }
+                weight = matchingItem.weight;
             }
 
-            const weight = matchingItem.weight;
             const singleWeight = (size / 1000) * weight;
             const totalWeight = singleWeight * quantity;
 
             document.getElementById('output').innerHTML = `
-                單支重量：${singleWeight.toFixed(1)} kg<br>
-                總重量：${totalWeight.toFixed(1)} kg
+                <p>型號: ${model}</p>
+                <p>尺寸: ${size} mm</p>
+                <p>單支重量: ${singleWeight.toFixed(2)} kg</p>
+                <p>數量: ${quantity} 支</p>
+                <p>總重量: ${totalWeight.toFixed(2)} kg</p>
             `;
             document.getElementById('result').hidden = false;
         }
 
-        // 初始化尺寸選單
-        updateSizeOptions();
+        // 清空表單功能
+        function clearForm() {
+            const model = document.getElementById('model').value;
+            document.getElementById('size').disabled = false;
+            document.getElementById('customSize').value = '';
+            document.getElementById('quantity').value = '';
+            clearResult();
+            
+            // 顯示第一個尺寸的提示（如果有）
+            if (data[model] && data[model][0]) {
+                const firstSize = data[model][0].size;
+                document.getElementById('hint').textContent = hints[model]?.[firstSize] || "無提示";
+                document.getElementById('size').value = firstSize;
+            }
+        }
+        
+        // 初始化尺寸選單和示意圖
+        window.onload = function() {
+            updateSizeOptions();
+            
+            // 為自訂尺寸輸入框添加事件監聽
+            document.getElementById('customSize').addEventListener('input', function() {
+                if (this.value) {
+                    // 如果有自訂尺寸，則禁用預設尺寸選擇
+                    document.getElementById('size').disabled = true;
+                } else {
+                    // 否則啟用預設尺寸選擇
+                    document.getElementById('size').disabled = false;
+                }
+                clearResult();
+            });
+            
+            // 為預設尺寸選擇添加事件監聽
+            document.getElementById('size').addEventListener('change', function() {
+                if (this.value) {
+                    // 如果選擇了預設尺寸，則清空自訂尺寸
+                    document.getElementById('customSize').value = '';
+                }
+            });
+        };
     </script>
 </body>
 
