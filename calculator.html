@@ -90,11 +90,20 @@
                                 <option value="603">603</option>
                                 <option value="590">590</option>
                             </optgroup>
+                            <optgroup label="欄杆">
+                                <option value="654">654</option>
+                                <option value="653">653</option>
+                            </optgroup>
                             <optgroup label="轉角">
                                 <option value="626">626</option>
                                 <option value="015">015</option>
+                                <option value="624">624</option>
+                            </optgroup>
+                            <optgroup label="格柵">
+                                <option value="473N">473N</option>
                             </optgroup>
                         </select>
+
                     </div>
                 </div>
                 <div class="mb-3 row align-items-center">
@@ -131,16 +140,17 @@
                 { size: 1728.7, weight: 5.536 },
                 { size: 816, weight: 5.536 },
                 { size: 708.7, weight: 5.536 },
+                { size: 1856.3, weight: 5.536 }  // 新增項目
             ],
             "493": [
                 { size: 1796, weight: 4.322 },
                 { size: 1688.7, weight: 4.322 },
-                { size: 1785.62, weight: 4.322 },
+                { size: 1785.62, weight: 4.322 }
             ],
             "510": [
                 { size: 1866, weight: 8.603 },
                 { size: 1758.7, weight: 8.603 },
-                { size: 1844.4, weight: 8.603 },
+                { size: 1843.4, weight: 8.603 }
             ],
             "587": [
                 { size: 4450, weight: 6.651 },
@@ -157,27 +167,41 @@
                 { size: 1728.7, weight: 7.679 },
                 { size: 1688.7, weight: 7.679 },
                 { size: 1856.8, weight: 7.679 },
+                { size: 816, weight: 7.679 },
+                { size: 708.7, weight: 7.679 }
             ],
             "622": [
                 { size: 1864, weight: 1.652 },
                 { size: 1756.7, weight: 1.652 }
             ],
             "603": [
-                { size: 521.96, weight: 3.069 },
+                { size: 521.96, weight: 3.069 }
             ],
             "590": [
-                { size: 3213.5, weight: 0.724 },
+                { size: 3213.5, weight: 0.724 }
             ],
             "015": [
                 { size: 4450, weight: 6.938 },
                 { size: 4125, weight: 6.938 },
-                { size: 3370, weight: 6.938 },
+                { size: 3370, weight: 6.938 }
             ],
             "626": [
                 { size: 4450, weight: 4.688 },
                 { size: 4125, weight: 4.688 },
-                { size: 3370, weight: 4.688 },
+                { size: 3370, weight: 4.688 }
             ],
+            "654": [
+                { size: 2550, weight: 2.969 }
+            ],
+            "653": [
+                { size: 2550, weight: 3.503 }
+            ],
+            "624": [
+                { size: 3204, weight: 0.908 }
+            ],
+            "473N": [
+                { size: 3119, weight: 2.871 }
+            ]
         };
 
         const hints = {
@@ -186,16 +210,17 @@
                 1728.7: "料號：2、2A",
                 816: "料號：3",
                 708.7: "料號：4",
+                1856.3: "料號：1R、2L"  // 對應新增的項目
             },
             "493": {
                 1796: "料號：1",
                 1688.7: "料號：2",
-                1785.62: "料號：2L、2R",
+                1785.62: "料號：2L、2R"
             },
             "510": {
                 1866: "料號：1、1A",
                 1758.7: "料號：2、2A",
-                1844.4: "料號：1R、2L、3AL、4AR",
+                1843.4: "料號：1R、2L、3AL、4AR"
             },
             "587": {
                 4450: "料號：A3~A14、B1、C1、C2",
@@ -212,16 +237,18 @@
                 1728.7: "料號：2、2A",
                 1688.7: "料號：2C",
                 1856.8: "料號：1R、1L",
+                816: "料號：2C",
+                708.7: "料號：2C"
             },
             "622": {
                 1864: "料號：1、1A",
                 1756.7: "料號：2、2A"
             },
             "603": {
-                521.96: "料號：1R、1L",
+                521.96: "料號：1R、1L"
             },
             "590": {
-                3213.5: "料號：1R、1L",
+                3213.5: "料號：1R、1L"
             },
             "015": {
                 4450: "料號：2R、4L、7L",
@@ -233,6 +260,18 @@
                 4125: "料號：R2",
                 3370: "料號：R3"
             },
+            "654": {
+                2550: "欄杆母，料號：1L"
+            },
+            "653": {
+                2550: "欄杆公，料號：1R、5A"
+            },
+            "624": {
+                3204: "料號：RL"
+            },
+            "473N": {
+                3119: "料號：1"
+            }
         };
 
         function updateSizeOptions() {
