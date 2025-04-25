@@ -132,7 +132,7 @@
             <div class="calculator-form">
                 <div class="form-area">
                     <h2 class="text-center mb-4">擠型計算機</h2>
-                    <form>
+                    <form onkeydown="if(event.key === 'Enter') { event.preventDefault(); calculateResult(); }">
                         <div class="mb-3 row align-items-center">
                             <label for="model" class="col-sm-3 col-form-label">型號</label>
                             <div class="col-sm-9">
@@ -175,6 +175,7 @@
                                     </optgroup>
                                     <optgroup label="格柵">
                                         <option value="473N">473N</option>
+                                        <option value="641">641</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -313,6 +314,10 @@
             ],
             "473N": [
                 { size: 3119, weight: 2.871 }
+            ],
+            "641": [
+                { size: 3213.5, weight: 1.155 },
+                { size: 3164, weight: 1.155 }
             ]
         };
 
@@ -396,6 +401,10 @@
             },
             "473N": {
                 3119: "料號：1"
+            },
+            "641": {
+                3213.5: "料號：10",
+                3164: "料號：11"
             }
         };
 
@@ -419,7 +428,8 @@
             "654": "img/654.jpg",
             "653": "img/653.jpg",
             "624": "img/624.jpg",
-            "473N": "img/473N.jpg"
+            "473N": "img/473N.jpg",
+            "641": "img/641.png",
         };
 
         function updateSizeOptions() {
