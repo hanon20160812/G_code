@@ -167,6 +167,7 @@
                                     <optgroup label="欄杆">
                                         <option value="653">653欄杆公</option>
                                         <option value="654">654欄杆母</option>
+                                        <option value="655">655欄杆直</option>
                                     </optgroup>
                                     <optgroup label="轉角">
                                         <option value="015">015轉角直料</option>
@@ -309,6 +310,9 @@
             "653": [
                 { size: 2550, weight: 3.503 }
             ],
+            "655": [
+                { size: 2561.5, weight: 6.049}
+            ],  
             "624": [
                 { size: 3204, weight: 0.908 }
             ],
@@ -396,6 +400,9 @@
             "653": {
                 2550: "料號：1R、5A"
             },
+            "655": {
+                2561.5: "料號：1L、2R、3L、4R"
+            },
             "624": {
                 3204: "料號：RL"
             },
@@ -405,7 +412,7 @@
             "641": {
                 3213.5: "料號：10",
                 3164: "料號：11"
-            }
+            },
         };
 
         // 示意圖映射 - 使用img資料夾中的圖片
@@ -430,6 +437,7 @@
             "624": "img/624.jpg",
             "473N": "img/473N.jpg",
             "641": "img/641.png",
+            "655": "img/655.jpg",
         };
 
         function updateSizeOptions() {
