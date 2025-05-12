@@ -176,8 +176,9 @@
                                         <option value="624">624轉角蓋板</option>
                                     </optgroup>
                                     <optgroup label="格柵">
-                                        <option value="473N">473N</option>
+                                        <option value="473N">473N格柵,盲窗中直料</option>
                                         <option value="641">641格柵直料併料</option>
+                                        <option value="707">707格柵</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -327,6 +328,9 @@
             "657": [
                 { size: 2657, weight: 4.854 },
                 { size: 2550, weight: 4.854 }
+            ],
+            "707": [
+                { size: 3147, weight: 2.134 }
             ]
         };
 
@@ -421,6 +425,9 @@
             "657": {
                 2657: "料號：",
                 2550: "料號："
+            },
+            "707": {
+                3147: "料號：2"
             }
         };
 
@@ -447,7 +454,8 @@
             "473N": "img/473N.jpg",
             "641": "img/641.png",
             "655": "img/655.jpg",
-            "657": "img/657.jpg"
+            "657": "img/657.jpg",
+            "707": "img/707.jpg" // 注意：需要確保有對應的圖片文件
         };
 
         function updateSizeOptions() {
