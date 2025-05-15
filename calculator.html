@@ -140,7 +140,12 @@
                                     <optgroup label="直料">
                                         <option value="587">587</option>
                                         <option value="588">588</option>
+
                                     </optgroup>
+                                    <optgroup label="DOOR">
+                                        <option value="596">596開門直料</option>
+                                    </optgroup>
+
                                     <optgroup label="橫料">
                                         <option value="476">476</option>
                                         <option value="493">493</option>
@@ -339,6 +344,9 @@
             ],
             "643": [
                 { size: 1688, weight: 1.667 }
+            ],
+            "596": [
+                { size: 4125, weight: 8.010 }
             ]
         };
 
@@ -442,6 +450,9 @@
             },
             "643": {
                 1688: "料號：2"
+            },
+            "596": {
+                4125: "料號：D1、D2、D3"
             }
         };
 
@@ -471,7 +482,8 @@
             "657": "img/657.jpg",
             "707": "img/707.jpg", // 注意：需要確保有對應的圖片文件
             "644": "img/644.jpg",  // 需要添加644的图片
-            "643": "img/643.jpg"   // 需要添加643的图片
+            "643": "img/643.jpg",   // 需要添加643的图片
+            "596": "img/596.jpg"  // 需要添加596的图片
         };
 
         function updateSizeOptions() {
