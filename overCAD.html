@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Over裝甲 - CNC鑽孔代碼生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 50%, #FFEBCD 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(255, 228, 225, 0.3);
+            border: 2px solid rgba(255, 192, 203, 0.4);
+            overflow: hidden;
+        }
+
+        .panel-cad-import {
+            height: 850px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-cad-import .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .panel-cnc-generation {
+            height: 850px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-cnc-generation .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .panel-output-result {
+            height: 850px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-output-result .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #F0E68C, #FFE4B5);
+            color: #8B4513;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h2 {
+            font-size: 2.0em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 20px;
+            
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #F0F8FF;
+            border-radius: 8px;
+            border-left: 4px solid #DDA0DD;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #8B4513;
+            margin-bottom: 0;
+            font-size: 16px;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .form-group.vertical {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-group.vertical label {
+            margin-bottom: 5px;
+            min-width: auto;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #F5DEB3;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #DDA0DD;
+            box-shadow: 0 0 0 3px rgba(221, 160, 221, 0.2);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px;
+            background: #F8F8FF;
+            border-radius: 6px;
+            border: 1px solid #DDA0DD;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .checkbox-item:hover {
+            background: #E6E6FA;
+            border-color: #9370DB;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(147, 112, 219, 0.2);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            pointer-events: none;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #8B4513;
+            border: 2px solid #DDA0DD;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #DDA0DD;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(221, 160, 221, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #8B4513;
+            border: 2px solid #9370DB;
+        }
+
+        .btn-secondary:hover {
+            background: #9370DB;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border: 2px solid #FF6B6B;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #FF5252, #FF7A7A);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+       
+        .output-area {
+            background: white;
+            border: 2px solid #F5DEB3;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .output-area .highlight-green {
+            background-color: #90EE90;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .output-area .coordinate-box {
+            background-color: #FFE4E1;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .import-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        .import-controls .btn {
+            flex: 1;
+            white-space: nowrap;
+            padding: 10px 8px;
+            font-size: 14px;
+            min-width: 0;
+        }
+
+        .status-display {
+            background: #F8F8FF;
+            border: 1px solid #DDA0DD;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 16px;
+            color: #8B4513;
+            margin: 10px 0;
+        }
+
+        .coordinate-preview {
+            overflow-y: auto;
+            background: #FFFEF7;
+            border: 1px solid #F0E68C;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            
+            min-height: 200px;
+        }
+
+        .coordinate-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .coordinate-item:nth-child(even) {
+            background: rgba(240, 230, 140, 0.1);
+        }
+
+        .cad-import-section {
+            background: linear-gradient(135deg, #E6E6FA, #F0F8FF);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #DDA0DD;
+        }
+
+        .sample-data {
+            background: #FFFEF7;
+            border: 1px solid #F0E68C;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .stats-display {
+            background: #F0F8FF;
+            border: 1px solid #DDA0DD;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 16px;
+            color: #8B4513;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 2px 0;
+        }
+
+        .diameter-group {
+            background: white;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #F0E68C;
+        }
+
+        .diameter-header {
+            color: #8B4513;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #F0E68C;
+            padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diameter-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .sort-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #DDA0DD;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #8B4513;
+            transition: all 0.3s ease;
+        }
+
+        .sort-btn:hover {
+            background: #DDA0DD;
+            color: white;
+        }
+
+        .copy-icon {
+            color: #8B4513;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .copy-icon:hover {
+            opacity: 1;
+            background-color: rgba(139, 69, 19, 0.1);
+            transform: scale(1.1);
+        }
+
+        .copy-tooltip {
+            position: relative;
+        }
+
+        .copy-tooltip .tooltip-text {
+            visibility: hidden;
+            background-color: #8B4513;
+            color: white;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px 8px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            right: 0;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .copy-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 10px;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #8B4513 transparent transparent transparent;
+        }
+
+        .copy-tooltip.show .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .coordinate-line {
+            margin: 2px 0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 27px;
+        }
+
+        .coordinate-line:hover {
+            background: rgba(221, 160, 221, 0.2);
+        }
+
+        .coordinate-mapping {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            background: rgba(255, 248, 220, 0.8);
+            border-radius: 6px;
+            margin: 8px 0;
+            border: 1px dashed #DDA0DD;
+        }
+
+        .program-select {
+            background: white;
+            border: 1px solid #DDA0DD;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 14px;
+            color: #8B4513;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .program-select:hover {
+            border-color: #9370DB;
+            background: #F8F8FF;
+        }
+
+        .program-select:focus {
+            outline: none;
+            border-color: #9370DB;
+            box-shadow: 0 0 0 2px rgba(147, 112, 219, 0.2);
+        }
+
+        .mapping-btn {
+            background: linear-gradient(45deg, #90EE90, #98FB98);
+            color: #006400;
+            border: 1px solid #90EE90;
+            font-weight: bold;
+            padding: 4px 12px;
+        }
+
+        .mapping-btn:hover {
+            background: linear-gradient(45deg, #7CFC00, #90EE90);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(144, 238, 144, 0.4);
+        }
+
+        .dynamic-fieldset {
+            background: #F0F8FF;
+            border: 2px solid #DDA0DD;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        #dynamicFieldsetArea {
+
+            overflow-y: auto;
+            margin: 15px 0;
+            padding-right: 5px;
+        }
+
+        .fieldset-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1400px) {
+            .container {
+                grid-template-columns: 1fr;
+                max-width: 1200px;
+            }
+            
+            .import-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .import-controls .btn {
+                flex: 0 1 auto;
+                min-width: 120px;
+            }
+        }
+
+        @media (min-width: 1401px) and (max-width: 1600px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+                max-width: 1400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側：座標導入與預覽 -->
+        <div class="panel panel-cad-import">
+            <div class="header">
+                <h2>🎯 CAD座標導入</h2>
+                <p>從AutoCAD提取圓形座標數據，支援多種格式和排序功能</p>
+            </div>
+            <div class="content">
+                <!-- CAD數據導入控制區域 -->
+                <div class="cad-import-section">
+                <div class="import-controls">
+                    <button class="btn btn-secondary" onclick="importFromClipboard()">📋 直接貼上</button>
+                        <button class="btn btn-secondary" onclick="importFromURL()">🔗 從CAD導入</button>
+                    <button class="btn btn-secondary" onclick="loadSampleData()">📝 載入範例</button>
+                        <button class="btn btn-secondary" onclick="clearCoordinates()">🗑️ 清除所有</button>
+                </div>
+                <div class="status-display" id="importStatus">等待CAD數據導入...</div>
+                </div>
+                
+                <!-- 座標預覽 -->
+                <div class="section-title">📊 座標預覽</div>
+                <div class="coordinate-preview" id="coordinatePreview">
+                    <div style="text-align: center; color: #999;">尚未導入座標數據</div>
+                </div>
+                
+                <!-- 輸入資料區域 -->
+                <div class="section-title">📝 輸入資料</div>
+                
+                <div class="form-group vertical">
+                    <label for="inputData">座標數據：</label>
+                    <textarea id="inputData" rows="6" placeholder="範例格式：
+X座標	Y座標	圓大小
+72	-44.37	10
+332	150	10
+632	-44.37	6"></textarea>
+                </div>
+                
+                <div style="text-align: center; margin: 15px 0;">
+                    <button class="btn" onclick="convertAndProcessData()" style="font-size: 16px; padding: 12px 25px;">
+                        🔄 轉換並排序
+                    </button>
+                </div>
+                
+                <!-- 統計資訊 -->
+                <div class="stats-display" id="coordinateStats" style="display: none;">
+                    <div class="section-title" style="margin-bottom: 10px;">📊 統計資訊</div>
+                    <div class="stats-item">
+                        <span><strong>總座標數量:</strong></span>
+                        <span id="totalCoords">0</span>
+                    </div>
+                    <div class="stats-item">
+                        <span><strong>直徑種類:</strong></span>
+                        <span id="diameterCount">0</span>
+                    </div>
+                    <div id="diameterBreakdown"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：CNC代碼生成 -->
+        <div class="panel panel-cnc-generation">
+            <div class="header">
+                <h2>⚙️ CNC代碼生成</h2>
+                <p>生成鑽孔G-CODE程式</p>
+            </div>
+            <div class="content">
+                <div class="section-title">🔧 工件資料</div>
+                
+                <div class="form-group">
+                    <label for="model">型號：</label>
+                    <input type="text" id="model" placeholder="輸入工件型號">
+                </div>
+
+                <div class="form-group">
+                    <label for="length">長度：</label>
+                    <input type="number" id="length" placeholder="只要輸入數字即可">
+                </div>
+
+                <div class="form-group">
+                    <label for="origin">工件原點：</label>
+                    <select id="origin">
+                        <option value="left-top">左上</option>
+                        <option value="left-bottom">左下</option>
+                        <option value="right-top">右上</option>
+                        <option value="right-bottom">右下</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="coordinateG">坐標系G：</label>
+                    <select id="coordinateG">
+                        <option value="G54">G54</option>
+                        <option value="G55">G55</option>
+                        <option value="G56">G56</option>
+                        <option value="G57">G57</option>
+                        <option value="G58">G58</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="programEndX">結束位置X：</label>
+                    <input type="text" id="programEndX" name="programEndX" placeholder="輸入程式結束位置X" value="(G0G90X-100.)">
+                </div>
+
+                <div class="section-title">📝 程式段選擇</div>
+                <div class="checkbox-group">
+                    <div class="checkbox-item" onclick="toggleCheckbox('N1')">
+                        <input type="checkbox" id="N1" value="N1" onchange="toggleProgramSection('N1')">
+                        <label for="N1">N1</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N2')">
+                        <input type="checkbox" id="N2" value="N2" onchange="toggleProgramSection('N2')">
+                        <label for="N2">N2</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N3')">
+                        <input type="checkbox" id="N3" value="N3" onchange="toggleProgramSection('N3')">
+                        <label for="N3">N3</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N4')">
+                        <input type="checkbox" id="N4" value="N4" onchange="toggleProgramSection('N4')">
+                        <label for="N4">N4</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N5')">
+                        <input type="checkbox" id="N5" value="N5" onchange="toggleProgramSection('N5')">
+                        <label for="N5">N5</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N6')">
+                        <input type="checkbox" id="N6" value="N6" onchange="toggleProgramSection('N6')">
+                        <label for="N6">N6</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N7')">
+                        <input type="checkbox" id="N7" value="N7" onchange="toggleProgramSection('N7')">
+                        <label for="N7">N7</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N8')">
+                        <input type="checkbox" id="N8" value="N8" onchange="toggleProgramSection('N8')">
+                        <label for="N8">N8</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N9')">
+                        <input type="checkbox" id="N9" value="N9" onchange="toggleProgramSection('N9')">
+                        <label for="N9">N9</label>
+                    </div>
+                    <div class="checkbox-item" onclick="toggleCheckbox('N10')">
+                        <input type="checkbox" id="N10" value="N10" onchange="toggleProgramSection('N10')">
+                        <label for="N10">N10</label>
+                    </div>
+                </div>
+
+                <!-- 動態程式段區域 -->
+                <div id="dynamicFieldsetArea"></div>
+
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="generateGCode()" style="font-size: 18px; padding: 15px 30px;">
+                        生成ε(*´･∀･｀)зﾞ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三個面板：輸出結果 -->
+        <div class="panel panel-output-result">
+            <div class="header">
+                <h2>📤 輸出結果</h2>
+                <p>G-CODE程式輸出與檔案操作</p>
+            </div>
+            <div class="content">
+                <div class="section-title">📄 G-CODE程式</div>
+                                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button class="btn" onclick="copyGCode()">📋 複製代碼</button>
+                    <button class="btn" onclick="saveGCode()">💾 儲存檔案</button>
+                    <a href="https://ncviewer.com/" target="_blank" class="btn" style="text-decoration: none;">🔍 CNC檢查</a>
+                </div><br>
+                <div class="output-area" id="gcodeOutput">等待生成G-CODE...</div>
+                
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let coordinateData = [];
+        let processedCoordinates = {};
+
+        // 切換checkbox狀態（點擊整個區域時）
+        function toggleCheckbox(programNumber) {
+            const checkbox = document.getElementById(programNumber);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                // 觸發onchange事件
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // 動態程式段切換
+        function toggleProgramSection(programNumber) {
+            console.log('toggleProgramSection 被調用, programNumber:', programNumber);
+            try {
+            const checkbox = document.getElementById(programNumber);
+            const dynamicArea = document.getElementById('dynamicFieldsetArea');
+            const existingFieldset = document.getElementById(`fieldset_${programNumber}`);
+            
+                console.log('checkbox:', checkbox);
+                console.log('checkbox.checked:', checkbox ? checkbox.checked : 'checkbox不存在');
+                console.log('dynamicArea:', dynamicArea);
+                console.log('existingFieldset:', existingFieldset);
+                
+                if (checkbox && checkbox.checked && !existingFieldset) {
+                // 創建新的fieldset
+                    console.log('創建新的程式段:', programNumber);
+                createProgramFieldset(programNumber);
+                updateImportStatus(`✅ 已添加 ${programNumber} 程式段設定`, 'success');
+                } else if (checkbox && !checkbox.checked && existingFieldset) {
+                // 移除fieldset
+                    console.log('移除程式段:', programNumber);
+                existingFieldset.remove();
+                updateImportStatus(`🗑️ 已移除 ${programNumber} 程式段設定`, 'info');
+                } else {
+                    console.log('沒有執行任何動作');
+                }
+            } catch (error) {
+                console.error('toggleProgramSection 錯誤:', error);
+                updateImportStatus(`❌ 程式段切換失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 刀具類型數據對象
+        const toolTypeData = {
+            "6mm mill": { spindleSpeed: "2650", feedSpeed: "40" },
+            "12mm mill": { spindleSpeed: "1280", feedSpeed: "120" },
+            "6mm drill": { spindleSpeed: "3200", feedSpeed: "200" },
+            "13mm drill": { spindleSpeed: "1600", feedSpeed: "100" },
+            "22mm drill": { spindleSpeed: "3200", feedSpeed: "125" },
+            "26mm drill": { spindleSpeed: "3200", feedSpeed: "150" },
+            "3mm drill": { spindleSpeed: "4000", feedSpeed: "150" },
+            "4mm drill": { spindleSpeed: "3500", feedSpeed: "180" },
+            "5mm drill": { spindleSpeed: "3000", feedSpeed: "200" },
+            "8mm drill": { spindleSpeed: "2800", feedSpeed: "180" },
+            "10mm drill": { spindleSpeed: "2400", feedSpeed: "160" },
+            "12mm drill": { spindleSpeed: "2000", feedSpeed: "140" },
+            "16mm drill": { spindleSpeed: "1800", feedSpeed: "120" },
+            "20mm drill": { spindleSpeed: "1600", feedSpeed: "100" },
+            "25mm drill": { spindleSpeed: "1400", feedSpeed: "90" },
+            "30mm drill": { spindleSpeed: "1200", feedSpeed: "80" }
+        };
+
+        // 創建程式段表單
+        function createProgramFieldset(programNumber) {
+            console.log('createProgramFieldset 被調用, programNumber:', programNumber);
+            try {
+            const dynamicArea = document.getElementById('dynamicFieldsetArea');
+                
+                if (!dynamicArea) {
+                    console.error('找不到 dynamicFieldsetArea 元素');
+                    return;
+                }
+            
+            // 創建fieldset容器
+            const fieldset = document.createElement('div');
+            fieldset.className = 'dynamic-fieldset';
+            fieldset.id = `fieldset_${programNumber}`;
+            
+                console.log('創建的fieldset元素:', fieldset);
+                
+                // 根據JS文件格式生成統一的表單
+                const formContent = `
+                    <div style="background: #DDA0DD; color: white; padding: 5px 15px; border-radius: 5px; font-weight: bold; margin-bottom: 15px;">${programNumber}</div>
+                        <div class="fieldset-grid">
+                            <div class="form-group">
+                            <label for="toolT-${programNumber}">刀庫T：</label>
+                            <select id="toolT-${programNumber}" name="toolT" onchange="updateToolData('${programNumber}')">
+                                <option value="">請選擇</option>
+                                <option value="T1">T1</option>
+                                <option value="T2">T2</option>
+                                <option value="T3">T3</option>
+                                <option value="T4">T4</option>
+                                <option value="T5">T5</option>
+                                <option value="T6">T6</option>
+                                <option value="T7">T7</option>
+                                <option value="T8">T8</option>
+                                <option value="T9">T9</option>
+                                <option value="T10">T10</option>
+                                <option value="T11">T11</option>
+                                <option value="T12">T12</option>
+                            </select>
+                            </div>
+                            <div class="form-group">
+                            <label for="toolRemark-${programNumber}">刀庫備註：</label>
+                            <select id="toolRemark-${programNumber}" name="toolRemark" onchange="updateToolParameters('${programNumber}')">
+                                <option value="">請選擇刀具類型</option>
+                                <optgroup label="銑刀 (Mill)">
+                                    <option value="6mm mill">6mm mill</option>
+                                    <option value="12mm mill">12mm mill</option>
+                                </optgroup>
+                                <optgroup label="鑽頭 (Drill)">
+                                    <option value="3mm drill">3mm drill</option>
+                                    <option value="4mm drill">4mm drill</option>
+                                    <option value="5mm drill">5mm drill</option>
+                                    <option value="6mm drill">6mm drill</option>
+                                    <option value="8mm drill">8mm drill</option>
+                                    <option value="10mm drill">10mm drill</option>
+                                    <option value="12mm drill">12mm drill</option>
+                                    <option value="13mm drill">13mm drill</option>
+                                    <option value="16mm drill">16mm drill</option>
+                                    <option value="20mm drill">20mm drill</option>
+                                    <option value="22mm drill">22mm drill</option>
+                                    <option value="25mm drill">25mm drill</option>
+                                    <option value="26mm drill">26mm drill</option>
+                                    <option value="30mm drill">30mm drill</option>
+                                </optgroup>
+                            </select>
+                            </div>
+                            <div class="form-group">
+                            <label for="coordinateXY-${programNumber}">第一座標：</label>
+                            <input type="text" id="coordinateXY-${programNumber}" name="coordinateXY">
+                            </div>
+                            <div class="form-group">
+                            <label for="coordinates-${programNumber}">座標們：</label>
+                            <textarea id="coordinates-${programNumber}" name="coordinates" rows="3" placeholder="(X159.9999 Y-48.8390 ( 22 )範例)"></textarea>
+                            </div>
+                            <div class="form-group">
+                            <label for="spindleSpeed-${programNumber}">主軸轉速S：</label>
+                            <input type="text" id="spindleSpeed-${programNumber}" name="spindleSpeed" placeholder="只要輸入數字即可">
+                            </div>
+                            <div class="form-group">
+                            <label for="correctionH-${programNumber}">補正H：</label>
+                            <input type="text" id="correctionH-${programNumber}" name="correctionH" value="H1" readonly>
+                            </div>
+                            <div class="form-group">
+                            <label for="drillUpZ-${programNumber}" style="background-color: #CDC1FF">鑽孔抬刀Z：</label>
+                            <input type="number" id="drillUpZ-${programNumber}" name="drillUpZ" placeholder="只要輸入數字即可" value="60">
+                            </div>
+                            <div class="form-group">
+                            <label for="depthZ-${programNumber}" style="background-color: #84C1FF">鑽孔深度Z：</label>
+                            <input type="number" id="depthZ-${programNumber}" name="depthZ" placeholder="只要輸入數字即可" min="-150" max="300" value="-10" oninput="validateDepthZ(this)">
+                            </div>
+                            <div class="form-group">
+                            <label for="drillHeightR-${programNumber}">鑽孔高度R：</label>
+                            <input type="number" id="drillHeightR-${programNumber}" name="drillHeightR" placeholder="只要輸入數字即可" value="10">
+                            </div>
+                            <div class="form-group">
+                            <label for="feedSpeedF-${programNumber}">進給速度F：</label>
+                            <input type="text" id="feedSpeedF-${programNumber}" name="feedSpeedF" placeholder="只要輸入數字即可">
+                            </div>
+                            <div class="form-group">
+                            <label for="endUpZ-${programNumber}" style="background-color: #FFB0B0">結束提刀Z：</label>
+                            <input type="number" id="endUpZ-${programNumber}" name="endUpZ" placeholder="只要輸入數字即可" value="100">
+                            </div>
+                            <div class="form-group">
+                            <label for="isHighest-${programNumber}">是否至最高：</label>
+                            <select id="isHighest-${programNumber}" name="isHighest">
+                                <option value="G91G28Z0">YES</option>
+                                <option value="" selected>NO</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                
+                fieldset.innerHTML = formContent;
+                dynamicArea.appendChild(fieldset);
+                console.log('程式段表單已添加到頁面:', programNumber);
+                
+            } catch (error) {
+                console.error('createProgramFieldset 錯誤:', error);
+                updateImportStatus(`❌ 創建程式段表單失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 深度Z驗證函數
+        window.validateDepthZ = function (input) {
+            const value = parseFloat(input.value);
+
+            if (value >= 300) {
+                input.value = "300";
+                alert("深度Z的值不能高於300，已自動設置為300");
+            } else if (value < -150) {
+                input.value = -150;
+                alert("深度Z的值不能低於-150，已自動設置為-150");
+            }
+        };
+
+        // 更新刀庫T相關欄位的函數
+        window.updateToolData = function (program) {
+            const selectedTool = document.getElementById(`toolT-${program}`).value;
+
+            // 補正H欄位的更新（根據刀庫T編號）
+            const correctionInput = document.getElementById(`correctionH-${program}`);
+            const toolIndex = selectedTool ? parseInt(selectedTool.replace("T", ""), 10) : 1;
+            correctionInput.value = `H${toolIndex}`;
+        };
+
+        // 更新刀具參數的函數（根據刀庫備註選擇）
+        window.updateToolParameters = function (program) {
+            const selectedToolType = document.getElementById(`toolRemark-${program}`).value;
+
+            if (selectedToolType && toolTypeData[selectedToolType]) {
+                document.getElementById(`spindleSpeed-${program}`).value = toolTypeData[selectedToolType].spindleSpeed;
+                document.getElementById(`feedSpeedF-${program}`).value = toolTypeData[selectedToolType].feedSpeed;
+            } else {
+                document.getElementById(`spindleSpeed-${program}`).value = "";
+                document.getElementById(`feedSpeedF-${program}`).value = "";
+            }
+        };
+
+        // 從剪貼簿導入CAD數據（增強版）
+        async function importFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                
+                // 嘗試解析JSON格式（來自LISP程式）
+                try {
+                    const cadData = JSON.parse(text);
+                    if (cadData.coordinates && Array.isArray(cadData.coordinates)) {
+                        processCADData(cadData);
+                        updateImportStatus('✅ 成功導入CAD數據', 'success');
+                        return;
+                    }
+                } catch (e) {
+                    // 如果不是JSON，當作普通文字處理
+                }
+                
+                // 處理普通文字格式
+                document.getElementById('inputData').value = text;
+                updateImportStatus('✅ 已從剪貼簿導入文字數據', 'success');
+                convertAndProcessData();
+                
+            } catch (e) {
+                updateImportStatus('❌ 剪貼簿讀取失敗: ' + e.message, 'error');
+            }
+        }
+
+        // 從URL導入
+        function importFromURL() {
+            checkURLParams();
+            if (!window.location.search.includes('data=')) {
+                updateImportStatus('⚠️ URL中沒有找到數據參數', 'error');
+            }
+        }
+
+        // 檢查URL參數
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            if (dataParam) {
+                try {
+                    const cadData = JSON.parse(decodeURIComponent(dataParam));
+                    processCADData(cadData);
+                    updateImportStatus('✅ 已從URL自動導入CAD數據', 'success');
+                } catch (e) {
+                    updateImportStatus('❌ URL數據解析失敗: ' + e.message, 'error');
+                }
+            }
+        }
+
+        // 處理CAD數據（增強版）
+        function processCADData(cadData) {
+            console.log('processCADData 被調用, cadData:', cadData);
+            try {
+                if (!cadData || !cadData.coordinates || !Array.isArray(cadData.coordinates)) {
+                    console.error('CAD數據格式無效:', cadData);
+                    updateImportStatus('❌ CAD數據格式無效', 'error');
+                    return;
+                }
+
+                // 轉換CAD數據為表格格式並填入輸入框
+                let tableData = 'X座標\tY座標\t圓大小\n';
+                cadData.coordinates.forEach(coord => {
+                    tableData += `${coord.x}\t${coord.y}\t${coord.diameter}\n`;
+                });
+                document.getElementById('inputData').value = tableData;
+                
+                // 自動轉換並處理
+                convertAndProcessData();
+                
+                updateImportStatus(`✅ 成功導入 ${cadData.coordinates.length} 個圓形座標`, 'success');
+                
+            } catch (error) {
+                console.error('processCADData 錯誤:', error);
+                updateImportStatus(`❌ 處理CAD數據失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 轉換並處理數據（新增主要函數）
+        function convertAndProcessData() {
+            const input = document.getElementById('inputData').value.trim();
+            
+            if (!input) {
+                updateImportStatus('請輸入座標資料', 'error');
+                return;
+            }
+            
+            try {
+                // 解析輸入資料
+                const lines = input.split('\n').filter(line => line.trim());
+                const data = [];
+                
+                for (let i = 1; i < lines.length; i++) { // 跳過標題行
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // 支援 Tab、空格、逗號分隔
+                    const parts = line.split(/[\s,]+/);
+                    
+                    if (parts.length >= 3) {
+                        const x = parseFloat(parts[0]);
+                        const y = parseFloat(parts[1]);
+                        const diameter = parseFloat(parts[2]);
+                        
+                        if (!isNaN(x) && !isNaN(y) && !isNaN(diameter)) {
+                            data.push({ x, y, diameter });
+                        }
+                    }
+                }
+                
+                if (data.length === 0) {
+                    updateImportStatus('甲賽拉，沒有找到有效的座標資料', 'error');
+                    return;
+                }
+                
+                // 設定全域變數
+                coordinateData = data;
+                
+                // 按圓大小分組
+                processedCoordinates = {};
+                data.forEach(item => {
+                    if (!processedCoordinates[item.diameter]) {
+                        processedCoordinates[item.diameter] = [];
+                    }
+                    processedCoordinates[item.diameter].push(item);
+                });
+                
+                // 對每組內的資料進行預設排序（X軸由小到大，Y軸由小到大）
+                Object.keys(processedCoordinates).forEach(diameter => {
+                    processedCoordinates[diameter].sort((a, b) => {
+                        // 先按 X 軸排序（由小到大）
+                        const xCompare = a.x - b.x;
+                        if (xCompare !== 0) return xCompare;
+                        
+                        // X 相同時按 Y 軸排序（由小到大）
+                        return a.y - b.y;
+                    });
+                });
+                
+                // 更新顯示
+                updateCoordinatePreview();
+                updateCoordinateStats();
+                
+                const sortedDiameters = Object.keys(processedCoordinates).map(Number).sort((a, b) => a - b);
+                updateImportStatus(`✅ 成功轉換 ${data.length} 筆資料，共 ${sortedDiameters.length} 個直徑群組`, 'success');
+                
+            } catch (error) {
+                console.error('轉換數據錯誤:', error);
+                updateImportStatus('資料格式錯誤，請檢查輸入格式', 'error');
+            }
+        }
+
+        // 更新座標預覽（增強版）
+        function updateCoordinatePreview() {
+            const preview = document.getElementById('coordinatePreview');
+            
+            // 按直徑排序（預設由小到大）
+            const sortedDiameters = Object.keys(processedCoordinates)
+                .map(Number)
+                .sort((a, b) => a - b);
+            
+            let htmlOutput = '';
+            
+            sortedDiameters.forEach((diameter) => {
+                // 創建直徑群組區塊
+                htmlOutput += `<div class="diameter-group">`;
+                htmlOutput += `<div class="diameter-header">
+                    <span>🔸 直徑 ${diameter.toFixed(1)}mm (${processedCoordinates[diameter].length} 點)</span>
+                    <div class="diameter-controls">
+                        <button class="sort-btn" onclick="sortDiameterGroup(${diameter}, 'x-asc')" title="X軸由小到大">X↗</button>
+                        <button class="sort-btn" onclick="sortDiameterGroup(${diameter}, 'x-desc')" title="X軸由大到小">X↘</button>
+                        <button class="sort-btn" onclick="sortDiameterGroup(${diameter}, 'y-asc')" title="Y軸由小到大">Y↗</button>
+                        <button class="sort-btn" onclick="sortDiameterGroup(${diameter}, 'y-desc')" title="Y軸由大到小">Y↘</button>
+                        <div class="copy-tooltip">
+                            <span class="copy-icon" onclick="copyDiameterGroup(${diameter})" title="複製此群組座標">📋</span>
+                            <span class="tooltip-text">已複製！</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="coordinate-mapping">
+                    <select id="programSelect-${diameter}" class="program-select">
+                        <option value="">選擇程式段</option>
+                        <option value="N1">N1</option>
+                        <option value="N2">N2</option>
+                        <option value="N3">N3</option>
+                        <option value="N4">N4</option>
+                        <option value="N5">N5</option>
+                        <option value="N6">N6</option>
+                        <option value="N7">N7</option>
+                        <option value="N8">N8</option>
+                        <option value="N9">N9</option>
+                        <option value="N10">N10</option>
+                    </select>
+                    <button class="sort-btn mapping-btn" onclick="mapCoordinatesToProgram(${diameter})" title="對接到選擇的程式段">🔗 對接</button>
+                </div>`;
+                
+                // 添加座標資料
+                processedCoordinates[diameter].forEach((item, index) => {
+                    const x = item.x.toFixed(2);
+                    const y = item.y.toFixed(2);
+                    const size = item.diameter.toFixed(1);
+                    
+                    const line = `${index + 1}. X${x} Y${y} (Ø${size}mm)`;
+                    htmlOutput += `<div class="coordinate-line">${line}</div>`;
+                });
+                
+                htmlOutput += '</div>';
+            });
+            
+            preview.innerHTML = htmlOutput;
+        }
+
+        // 排序特定直徑群組
+        function sortDiameterGroup(diameter, sortType) {
+            if (!processedCoordinates[diameter]) return;
+            
+            const coords = processedCoordinates[diameter];
+            
+            switch(sortType) {
+                case 'x-asc':
+                    coords.sort((a, b) => a.x - b.x);
+                    break;
+                case 'x-desc':
+                    coords.sort((a, b) => b.x - a.x);
+                    break;
+                case 'y-asc':
+                    coords.sort((a, b) => a.y - b.y);
+                    break;
+                case 'y-desc':
+                    coords.sort((a, b) => b.y - a.y);
+                    break;
+            }
+            
+            // 重新渲染預覽
+            updateCoordinatePreview();
+            
+            const sortTypeText = {
+                'x-asc': 'X軸由小到大',
+                'x-desc': 'X軸由大到小',
+                'y-asc': 'Y軸由小到大',
+                'y-desc': 'Y軸由大到小'
+            };
+            
+            updateImportStatus(`✅ 直徑 ${diameter.toFixed(1)}mm 群組已按 ${sortTypeText[sortType]} 排序`, 'success');
+        }
+
+                // 更新統計資訊（增強版）
+        function updateCoordinateStats() {
+            const totalCount = document.getElementById('totalCoords');
+            const diameterTypes = document.getElementById('diameterCount');
+            const diameterBreakdown = document.getElementById('diameterBreakdown');
+            
+            if (!coordinateData || coordinateData.length === 0) {
+                document.getElementById('coordinateStats').style.display = 'none';
+                return;
+            }
+            
+            // 預設按直徑由小到大排序
+            const sortedDiameters = Object.keys(processedCoordinates)
+                .map(Number)
+                .sort((a, b) => a - b);
+            
+            totalCount.textContent = coordinateData.length;
+            diameterTypes.textContent = sortedDiameters.length;
+            
+            // 生成直徑分佈詳情
+            let breakdownHTML = '';
+            sortedDiameters.forEach(diameter => {
+                const count = processedCoordinates[diameter].length;
+                const percentage = ((count / coordinateData.length) * 100).toFixed(1);
+                breakdownHTML += `
+                    <div class="stats-item">
+                        <span>• Ø${diameter.toFixed(1)}mm:</span>
+                        <span>${count} 點 (${percentage}%)</span>
+                    </div>
+                `;
+            });
+            
+            diameterBreakdown.innerHTML = breakdownHTML;
+            document.getElementById('coordinateStats').style.display = 'block';
+        }
+
+        // 複製特定直徑群組的座標數據
+        function copyDiameterGroup(diameter) {
+            if (!processedCoordinates[diameter] || processedCoordinates[diameter].length === 0) {
+                updateImportStatus('❌ 沒有找到該直徑的座標數據', 'error');
+                return;
+            }
+            
+            // 生成要複製的文字內容（只包含座標數據）
+            let copyText = '';
+            
+            processedCoordinates[diameter].forEach((item, index) => {
+                const x = item.x.toFixed(2);
+                const y = item.y.toFixed(2);
+                copyText += `X${x} Y${y} (${item.diameter.toFixed(1)})`;
+                // 最後一行不加換行符
+                if (index < processedCoordinates[diameter].length - 1) {
+                    copyText += '\n';
+                }
+            });
+            
+            // 複製到剪貼簿
+            navigator.clipboard.writeText(copyText).then(() => {
+                // 顯示複製成功提示
+                showCopyTooltip(diameter);
+                updateImportStatus(`✅ 已複製直徑 ${diameter.toFixed(1)}mm 的 ${processedCoordinates[diameter].length} 個座標`, 'success');
+            }).catch(() => {
+                // 降級處理
+                const textArea = document.createElement('textarea');
+                textArea.value = copyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                showCopyTooltip(diameter);
+                updateImportStatus(`✅ 已複製直徑 ${diameter.toFixed(1)}mm 的 ${processedCoordinates[diameter].length} 個座標`, 'success');
+            });
+        }
+
+        // 顯示複製成功提示
+        function showCopyTooltip(diameter) {
+            // 找到對應的提示元素
+            const tooltips = document.querySelectorAll('.copy-tooltip');
+            tooltips.forEach(tooltip => {
+                const copyIcon = tooltip.querySelector('.copy-icon');
+                if (copyIcon && copyIcon.getAttribute('onclick').includes(diameter)) {
+                    tooltip.classList.add('show');
+                    
+                    // 2秒後隱藏提示
+                    setTimeout(() => {
+                        tooltip.classList.remove('show');
+                    }, 2000);
+                }
+            });
+        }
+
+
+
+        // 工件原點映射
+        const originMapping = {
+            'left-top': '(O--------)\n(---------)',
+            'left-bottom': '(---------)\n(O--------)',
+            'right-top': '(--------O)\n(---------)',
+            'right-bottom': '(---------)\n(--------O)'
+        };
+
+        // 生成G-CODE（基於JS文件格式）
+        function generateGCode() {
+            // 獲取基本參數
+            const model = document.getElementById('model').value || 'UNKNOWN';
+            const length = document.getElementById('length').value || '0';
+            const originSelect = document.getElementById('origin');
+            const originValue = originSelect.value;
+            const origin = originMapping[originValue] || '';
+            const coordinateG = document.getElementById('coordinateG').value;
+            const programEndX = document.getElementById('programEndX').value || '(G0G90X-100.)';
+            
+            // 檢查選中的程式段
+            const selectedPrograms = [];
+            for (let i = 1; i <= 10; i++) {
+                if (document.getElementById(`N${i}`).checked) {
+                    selectedPrograms.push(`N${i}`);
+                }
+            }
+            
+            // 如果沒有選擇程式段，使用直徑分組模式
+            if (selectedPrograms.length === 0) {
+                generateSimpleGCode();
+                return;
+            }
+            
+            // 生成刀具信息和代碼
+            let toolInfo = '';
+            let code = `(${model})\n(L=${length})\n(!!!!!!${coordinateG}!!!!)\n${origin}\n`;
+            
+            // 遍歷選中的程式段
+            selectedPrograms.forEach((program) => {
+                const fieldset = document.getElementById(`fieldset_${program}`);
+                if (!fieldset) return;
+                
+                const toolT = document.getElementById(`toolT-${program}`)?.value || '';
+                const coordinateXY = document.getElementById(`coordinateXY-${program}`)?.value || '';
+                const coordinates = document.getElementById(`coordinates-${program}`)?.value || '';
+                const spindleSpeed = document.getElementById(`spindleSpeed-${program}`)?.value || '';
+                const correctionH = document.getElementById(`correctionH-${program}`)?.value || 'H1';
+                const feedSpeedF = document.getElementById(`feedSpeedF-${program}`)?.value || '';
+                const toolRemark = document.getElementById(`toolRemark-${program}`)?.value || '';
+                const depthZ = document.getElementById(`depthZ-${program}`)?.value || '-10';
+                const drillUpZ = document.getElementById(`drillUpZ-${program}`)?.value || '60';
+                const drillHeightR = document.getElementById(`drillHeightR-${program}`)?.value || '10';
+                const endUpZ = document.getElementById(`endUpZ-${program}`)?.value || '100';
+                const isHighest = document.getElementById(`isHighest-${program}`)?.value || '';
+                
+                // 添加刀具信息
+                toolInfo += `(${toolRemark}, ${toolT} ${correctionH} S${spindleSpeed} F${feedSpeedF})\n`;
+                
+                                 // 添加程式段代碼
+                 code += `
+(<span style="color: #8B4513;">${toolRemark}</span>, <span style="background-color: #FFD09B">${toolT} ${correctionH}</span> S${spindleSpeed} F${feedSpeedF})
+
+${program}
+<span style="background-color: #FFD09B">${toolT}</span>(${toolRemark})
+G0G90<span class="highlight-green">${coordinateG}</span><span class="coordinate-box">${coordinateXY}</span>(!!) M3S${spindleSpeed}
+G43<span style="background-color: #FFD09B">${correctionH}</span>Z100.
+<span style="background-color: #CDC1FF">Z${drillUpZ}.</span>M8
+G98G81<span style="background-color: #84C1FF">Z${depthZ}.</span>R${drillHeightR}.F${feedSpeedF}
+
+(EX: X159.9999 Y-48.8390)(22)
+(!!) 
+${coordinates} 
+
+G0G90<span style="background-color: #FFB0B0">Z${endUpZ}.</span>M9
+M5
+${isHighest}
+
+  
+`;
+            });
+            
+            // 將刀具信息添加到代碼開頭
+            code = `${toolInfo}\n${code}`;
+            
+            // 最後追加結尾程式碼
+            code += `
+(~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)
+${programEndX}
+M30
+`;
+            
+            // 顯示結果（使用innerHTML以支持HTML格式）
+            const resultElement = document.getElementById('gcodeOutput');
+            resultElement.innerHTML = code;
+            updateImportStatus('✅ G-CODE生成完成', 'success');
+            
+            // 滾動到輸出結果區域
+            setTimeout(() => {
+                resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // 生成簡單G-CODE（按CAD座標直徑分組）
+        function generateSimpleGCode() {
+            // 檢查是否有座標數據
+            if (!coordinateData || coordinateData.length === 0) {
+                updateImportStatus('❌ 請先導入CAD座標數據或選擇程式段', 'error');
+                return;
+            }
+            
+            const model = document.getElementById('model').value || 'UNKNOWN';
+            const length = document.getElementById('length').value || '0';
+            const originSelect = document.getElementById('origin');
+            const originValue = originSelect.value;
+            const origin = originMapping[originValue] || '';
+            const coordinateG = document.getElementById('coordinateG').value;
+            const programEndX = document.getElementById('programEndX').value || '(G0G90X-100.)';
+            
+            let toolInfo = '';
+            let code = `(${model})\n(L=${length})\n(!!!!!!${coordinateG}!!!!!!)\n${origin}\n`;
+            
+            // 按直徑分組生成代碼（預設由小到大）
+            const sortedDiameters = Object.keys(processedCoordinates)
+                .map(Number)
+                .sort((a, b) => a - b);
+            
+            sortedDiameters.forEach((diameter, groupIndex) => {
+                const coords = processedCoordinates[diameter];
+                // 使用預設參數值
+                const feed = '100';
+                const spindle = '3000';
+                const depth = '-5';
+                const safeZ = '5';
+                
+                const toolT = `T${groupIndex + 1}`;
+                const correctionH = `H${groupIndex + 1}`;
+                const toolRemark = `${diameter}mm drill`;
+                
+                // 添加刀具信息
+                toolInfo += `(${toolRemark}, ${toolT} ${correctionH} S${spindle} F${feed})\n`;
+                
+                // 添加程式段代碼
+                code += `
+(${toolRemark}, ${toolT} ${correctionH} S${spindle} F${feed})
+
+AUTO_${diameter}MM
+${toolT}(${toolRemark})
+G0G90${coordinateG}X${coords[0].x.toFixed(3)}Y${coords[0].y.toFixed(3)}(!!) M3S${spindle}
+G43${correctionH}Z100.
+Z${safeZ}.M8
+G98G81Z${depth}.R10.F${feed}
+
+`;
+                
+                // 添加所有座標點
+                coords.forEach((coord, index) => {
+                    code += `X${coord.x.toFixed(3)}Y${coord.y.toFixed(3)}(${index + 1})\n`;
+                });
+                
+                code += `
+G0G90Z100.M9
+M5
+
+
+`;
+            });
+            
+            // 將刀具信息添加到代碼開頭
+            code = `${toolInfo}\n${code}`;
+            
+            // 最後追加結尾程式碼
+            code += `
+(~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)
+${programEndX}
+M30
+`;
+            
+            // 顯示結果
+            const resultElement = document.getElementById('gcodeOutput');
+            resultElement.innerHTML = code;
+            updateImportStatus('✅ G-CODE生成完成', 'success');
+            
+            // 滾動到輸出結果區域
+            setTimeout(() => {
+                resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+
+
+        // 複製G-CODE
+        function copyGCode() {
+            const resultDiv = document.getElementById('gcodeOutput');
+            const textToCopy = resultDiv.innerText || resultDiv.textContent;
+            
+            if (textToCopy === '等待生成G-CODE...' || textToCopy.trim() === '') {
+                updateImportStatus('❌ 請先生成G-CODE', 'error');
+                return;
+            }
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                updateImportStatus('✅ G-CODE已複製到剪貼簿', 'success');
+            }).catch(() => {
+                updateImportStatus('❌ 複製失敗', 'error');
+            });
+        }
+
+        // 儲存G-CODE檔案
+        function saveGCode() {
+            const resultDiv = document.getElementById('gcodeOutput');
+            const code = resultDiv.innerText || resultDiv.textContent;
+            
+            if (code === '等待生成G-CODE...' || code.trim() === '') {
+                updateImportStatus('❌ 請先生成G-CODE', 'error');
+                return;
+            }
+            
+            // 從型號欄位自動抓取資料，並清理檔名
+            const modelInput = document.getElementById('model').value;
+            let modelName = modelInput ? modelInput.trim() : '';
+            
+            // 如果型號欄位為空，使用預設名稱
+            if (!modelName) {
+                modelName = 'CNC_Program';
+            }
+            
+            // 清理檔名中的無效字符，只保留字母、數字、底線和短橫線
+            modelName = modelName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+            
+            // 生成時間戳
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+            const timeStr = now.toTimeString().slice(0, 5).replace(':', ''); // HHMM
+            
+            // 組合檔名：型號_drilling_日期_時間.txt
+            const filename = `${modelName}_drilling_${dateStr}_${timeStr}.txt`;
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            updateImportStatus(`✅ 檔案已儲存為: ${filename}`, 'success');
+        }
+
+        // 載入範例數據（增強版）
+        function loadSampleData() {
+            const sampleData = `X座標\tY座標\t圓大小
+72\t-44.37\t10
+332\t150\t10
+632\t-44.37\t6
+100.5\t200.75\t25
+150.25\t300\t30.5
+50\t100\t3
+75\t125\t3
+200\t250\t12
+225\t275\t12
+300\t350\t4`;
+            
+            document.getElementById('inputData').value = sampleData;
+            updateImportStatus('✅ 已載入範例數據', 'success');
+            convertAndProcessData();
+        }
+
+        // 清除所有數據
+        function clearCoordinates() {
+            coordinateData = [];
+            processedCoordinates = {};
+            document.getElementById('inputData').value = '';
+            document.getElementById('coordinatePreview').innerHTML = '<div style="text-align: center; color: #999;">尚未導入座標數據</div>';
+            document.getElementById('coordinateStats').style.display = 'none';
+            document.getElementById('gcodeOutput').textContent = '等待生成G-CODE...';
+            updateImportStatus('🔄 已清除所有數據', 'info');
+        }
+
+        // 更新狀態顯示
+        function updateImportStatus(message, type = 'info') {
+            const statusEl = document.getElementById('importStatus');
+            statusEl.textContent = message;
+            
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107',
+                info: '#8B4513'
+            };
+            
+            statusEl.style.color = colors[type] || colors.info;
+        }
+
+        // 頁面載入時檢查URL參數
+        window.addEventListener('load', function() {
+            checkURLParams();
+            if (!window.location.search.includes('data=')) {
+                updateImportStatus('系統就緒，等待CAD數據導入...', 'info');
+            }
+        });
+
+        // 座標對接到程式段功能
+        function mapCoordinatesToProgram(diameter) {
+            try {
+                // 獲取選擇的程式段
+                const programSelect = document.getElementById(`programSelect-${diameter}`);
+                const selectedProgram = programSelect.value;
+                
+                if (!selectedProgram) {
+                    updateImportStatus('❌ 請先選擇要對接的程式段', 'error');
+                    return;
+                }
+                
+                // 檢查該直徑的座標數據是否存在
+                if (!processedCoordinates[diameter] || processedCoordinates[diameter].length === 0) {
+                    updateImportStatus('❌ 該直徑沒有座標數據', 'error');
+                    return;
+                }
+                
+                const coords = processedCoordinates[diameter];
+                
+                // 檢查程式段是否已經激活，如果沒有則自動激活
+                const programCheckbox = document.getElementById(selectedProgram);
+                if (!programCheckbox.checked) {
+                    programCheckbox.checked = true;
+                    // 觸發程式段創建
+                    toggleProgramSection(selectedProgram);
+                    
+                    // 等待一小段時間讓DOM更新
+                    setTimeout(() => {
+                        fillProgramData(selectedProgram, diameter, coords);
+                    }, 100);
+                } else {
+                    fillProgramData(selectedProgram, diameter, coords);
+                }
+                
+            } catch (error) {
+                console.error('座標對接錯誤:', error);
+                updateImportStatus(`❌ 座標對接失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 填充程式段數據
+        function fillProgramData(programNumber, diameter, coords) {
+            try {
+                // 確保程式段表單存在
+                const fieldset = document.getElementById(`fieldset_${programNumber}`);
+                if (!fieldset) {
+                    updateImportStatus('❌ 程式段表單未找到，請稍後再試', 'error');
+                    return;
+                }
+                
+                // 生成第一座標格式 (第一行座標)
+                const firstCoord = coords[0];
+                const firstCoordinateText = `X${firstCoord.x.toFixed(2)} Y${firstCoord.y.toFixed(2)} (${firstCoord.diameter.toFixed(1)})`;
+                
+                // 生成座標們格式 (除了第一行之外的其他座標)
+                let coordinatesText = '';
+                if (coords.length > 1) {
+                    // 從第二個座標開始處理
+                    for (let i = 1; i < coords.length; i++) {
+                        const coord = coords[i];
+                        const x = coord.x.toFixed(2);
+                        const y = coord.y.toFixed(2);
+                        const dia = coord.diameter.toFixed(1);
+                        coordinatesText += `X${x} Y${y} (${dia})`;
+                        if (i < coords.length - 1) {
+                            coordinatesText += '\n';
+                        }
+                    }
+                }
+                // 如果只有一個座標，coordinatesText 保持空字串
+                
+                // 填入第一座標
+                const coordinateXYField = document.getElementById(`coordinateXY-${programNumber}`);
+                if (coordinateXYField) {
+                    coordinateXYField.value = firstCoordinateText;
+                }
+                
+                // 填入座標們
+                const coordinatesField = document.getElementById(`coordinates-${programNumber}`);
+                if (coordinatesField) {
+                    coordinatesField.value = coordinatesText;
+                }
+                
+                // 自動填入相關的直徑資訊到刀庫備註（如果有匹配的選項）
+                const toolRemarkField = document.getElementById(`toolRemark-${programNumber}`);
+                if (toolRemarkField) {
+                    // 嘗試匹配直徑到鑽頭類型
+                    const diameterInt = Math.round(diameter);
+                    const possibleToolTypes = [
+                        `${diameterInt}mm drill`,
+                        `${diameter.toFixed(0)}mm drill`
+                    ];
+                    
+                    for (let toolType of possibleToolTypes) {
+                        const option = Array.from(toolRemarkField.options).find(opt => opt.value === toolType);
+                        if (option) {
+                            toolRemarkField.value = toolType;
+                            // 觸發參數更新
+                            updateToolParameters(programNumber);
+                            break;
+                        }
+                    }
+                }
+                
+                updateImportStatus(`✅ 已成功對接直徑 ${diameter.toFixed(1)}mm (${coords.length} 點) 到 ${programNumber}`, 'success');
+                
+                // 滾動到對應的程式段刀庫T位置
+                setTimeout(() => {
+                    // 尝试滚动到刀庫T字段位置
+                    const toolTField = document.getElementById(`toolT-${programNumber}`);
+                    if (toolTField) {
+                        // 找到包含刀庫T字段的form-group
+                        const formGroup = toolTField.closest('.form-group');
+                        if (formGroup) {
+                            formGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            toolTField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    } else {
+                        // 如果刀庫T字段還沒創建，滾動到程式段表單頂部
+                        const fieldset = document.getElementById(`fieldset_${programNumber}`);
+                        if (fieldset) {
+                            fieldset.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                            // 如果程式段表單也還沒創建，滾動到對應的checkbox
+                            const programCheckbox = document.getElementById(programNumber);
+                            if (programCheckbox) {
+                                const checkboxItem = programCheckbox.closest('.checkbox-item');
+                                if (checkboxItem) {
+                                    checkboxItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }
+                        }
+                    }
+                }, 300);
+                
+            } catch (error) {
+                console.error('填充程式段數據錯誤:', error);
+                updateImportStatus(`❌ 填充數據失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 監聽PostMessage
+        window.addEventListener('message', function(event) {
+            try {
+                if (event.data && event.data.coordinates) {
+                    processCADData(event.data);
+                    updateImportStatus('✅ 已接收跨窗口CAD數據', 'success');
+                }
+            } catch (e) {
+                updateImportStatus('❌ PostMessage數據處理失敗: ' + e.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
