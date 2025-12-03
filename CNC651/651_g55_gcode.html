@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>651程式生成器(G55)</title>
+    <style>
+        :root {
+            --background-color: #1e1e2e;
+            --card-color: #2a2a3c;
+            --primary-color: #94e2d5;
+            --secondary-color: #cdd6f4;
+            --accent-color: #89b4fa;
+            --text-color: #cdd6f4;
+            --muted-color: #a6adc8;
+            --border-color: #45475a;
+            --success-color: #a6e3a1;
+            --warning-color: #f9e2af;
+            --danger-color: #f38ba8;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        
+        .header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .header h1 {
+            color: var(--accent-color);
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .header p {
+            color: var(--muted-color);
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .clear-button {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--danger-color);
+            color: var(--background-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .clear-button:hover {
+            opacity: 0.9;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 100px);
+        }
+        
+        .left-panel {
+            background: var(--card-color);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+        }
+        
+        .right-panel {
+            background: var(--card-color);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        
+        .btn-link {
+            background: var(--muted-color);
+            color: var(--background-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-link:hover {
+            background: var(--primary-color);
+            transform: translateY(-1px);
+        }
+        
+        .import-section {
+            background: rgba(148, 226, 213, 0.1);
+            border: 1px solid var(--primary-color);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .import-section h4 {
+            color: var(--primary-color);
+            margin: 0 0 12px 0;
+            font-size: 14px;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .status-success {
+            background: rgba(166, 227, 161, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+        
+        .status-error {
+            background: rgba(243, 139, 168, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+        
+        .status-warning {
+            background: rgba(249, 226, 175, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #313244;
+            color: var(--text-color);
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary {
+            background: var(--accent-color);
+            color: var(--background-color);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: var(--background-color);
+        }
+        
+        .btn-import {
+            background: var(--primary-color);
+            color: var(--background-color);
+        }
+        
+        .output-area {
+            flex: 1;
+            min-height: 500px;
+            background: #313244;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .placeholder-text {
+            color: var(--muted-color);
+            font-style: italic;
+        }
+        
+        .auto-import-notice {
+            background: rgba(166, 227, 161, 0.1);
+            border: 1px solid var(--success-color);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--success-color);
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+            display: none;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .data-preview {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            margin-top: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .clear-button {
+                position: static;
+                transform: none;
+                margin-top: 10px;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .header-buttons {
+                align-self: stretch;
+                justify-content: space-between;
+            }
+            
+            .btn-small {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .btn-link {
+                flex: 0 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 651程式生成器(G55)</h1>
+        <p>與651 CNC計算器無縫對接的G-CODE生成器</p>
+        <button class="clear-button" onclick="clearAll()">🗑️ 清除重置</button>
+    </div>
+    
+    <div class="container">
+        <!-- 左側控制面板 -->
+        <div class="left-panel">
+            <div class="section-title">
+                📝 參數設定
+            </div>
+            
+            <!-- 自動導入區域 -->
+            <div id="autoImportNotice" class="auto-import-notice">
+                🔄 偵測到來自CNC計算器的數據，正在自動導入...
+            </div>
+            
+
+            
+            <form id="paramForm">
+                <div class="form-group">
+                    <label for="productName">品名</label>
+                    <input type="text" id="productName" placeholder="31F-07" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="coordinateA">A1 座標 (A刀路起點)</label>
+                    <input type="text" id="coordinateA" placeholder="X-160.000Y1.000" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="coordinateB">B1 座標 (B刀路起點)</label>
+                    <input type="text" id="coordinateB" placeholder="X-205.710Y-145.710" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="coordinateB3">B3 座標 (斜切終點)</label>
+                    <input type="text" id="coordinateB3" placeholder="X-91.000Y9.000" value="">
+                </div>
+                
+                <div class="form-group">
+                    <label for="angle">角度 (度)</label>
+                    <input type="text" id="angle" placeholder="26.57" value="">
+                    <div style="font-size: 12px; color: var(--muted-color); margin-top: 4px;">
+                        來自CNC計算器的梯形斜角
+                    </div>
+                </div>
+            </form>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="generateGCode()">🔄 生成程式</button>
+            </div>
+<br>
+            <div class="import-section">
+                <h4>🔗 從CNC計算器導入</h4>
+                <button class="btn btn-import" onclick="importFromCalculator()">📥 手動導入數據</button>
+                <div id="importStatus" class="status-message"></div>
+                <div id="importPreview" class="data-preview"></div>
+            </div>
+        </div>
+        
+        <!-- 右側結果顯示 -->
+        <div class="right-panel">
+            <div class="section-header">
+                <div class="section-title">
+                    📄 G-CODE 輸出
+                </div>
+                <div class="header-buttons">
+                    <a href="https://ncviewer.com/" target="_blank" class="btn btn-link btn-small" title="在 NC Viewer 中查看 G-CODE">
+                        🔍 CNC檢查
+                    </a>
+                    <button class="btn btn-success btn-small" onclick="copyToClipboard()">📋 複製</button>
+                    <button class="btn btn-success btn-small" onclick="downloadGCode()">💾 下載</button>
+                </div>
+            </div>
+            
+            <div id="result" class="output-area">
+                <span class="placeholder-text">請點擊「生成程式」按鈕開始...</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全域變數
+        let currentGCodeData = null;
+        
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('651程式生成器載入完成');
+            
+            // 短暫延遲後檢查自動導入
+            setTimeout(() => {
+                checkAutoImport();
+            }, 500);
+        });
+        
+        // 檢查自動導入
+        function checkAutoImport() {
+            console.log('檢查自動導入條件...');
+            
+            // 檢查URL參數
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromCalculator = urlParams.get('from') === 'calculator';
+            const shouldAutoImport = urlParams.get('autoImport') === 'true';
+            
+            // 檢查localStorage
+            const autoImportFlag = localStorage.getItem('autoImportFlag');
+            const autoImportTimestamp = localStorage.getItem('autoImportTimestamp');
+            const forceAutoImport = localStorage.getItem('forceAutoImport');
+            const selectedVersion = localStorage.getItem('selectedVersion');
+            
+            // 檢查時間戳（5分鐘內有效）
+            const isRecentFlag = autoImportTimestamp && (Date.now() - parseInt(autoImportTimestamp)) < 300000;
+            
+            // 檢查是否有待導入的數據
+            const storedData = localStorage.getItem('cncCalculatorData');
+            
+            if (storedData) {
+                const shouldTriggerAutoImport = 
+                    (fromCalculator && shouldAutoImport) || 
+                    (autoImportFlag === 'true' && isRecentFlag) ||
+                    (forceAutoImport === 'true');
+                    
+                // 檢查版本匹配
+                const isVersionMatch = !selectedVersion || selectedVersion === 'G55';
+                
+                if (shouldTriggerAutoImport && isVersionMatch) {
+                    // 清除自動導入標記
+                    localStorage.removeItem('autoImportFlag');
+                    localStorage.removeItem('autoImportTimestamp');
+                    localStorage.removeItem('forceAutoImport');
+                    
+                    console.log('開始自動導入流程...');
+                    showAutoImportNotice();
+                    
+                    setTimeout(() => {
+                        const success = importFromCalculator();
+                        hideAutoImportNotice();
+                        
+                        if (success) {
+                            showImportStatus('success', '🎉 已自動從CNC計算器導入數據並生成G-CODE！');
+                            // 自動生成G-CODE
+                            setTimeout(() => {
+                                generateGCode();
+                            }, 1000);
+                        }
+                    }, 1200);
+                } else if (storedData) {
+                    showImportStatus('warning', '💡 偵測到CNC計算器數據！點擊「手動導入數據」按鈕載入。');
+                }
+            }
+        }
+        
+        // 從CNC計算器導入數據
+        function importFromCalculator() {
+            try {
+                console.log('開始導入CNC計算器數據...');
+                
+                const storedData = localStorage.getItem('cncCalculatorData');
+                console.log('原始localStorage數據:', storedData);
+                
+                if (!storedData) {
+                    showImportStatus('error', '❌ 未找到CNC計算器數據！請先在CNC計算器中計算並導出數據。');
+                    return false;
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(storedData);
+                    console.log('解析後的數據對象:', data);
+                } catch (parseError) {
+                    console.error('JSON解析錯誤:', parseError);
+                    showImportStatus('error', '❌ 數據格式錯誤！儲存的數據無法解析。');
+                    return false;
+                }
+                
+                // 檢查版本匹配
+                if (data.version && data.version !== 'G55') {
+                    showImportStatus('warning', `⚠️ 數據版本不匹配！檢測到${data.version}數據，但當前是G55生成器。`);
+                }
+                
+                // 驗證數據完整性 - 檢查新的座標欄位
+                const hasData = data.productName || data.coordA || data.coordB || data.coordC || data.angle;
+                if (!hasData) {
+                    showImportStatus('error', '❌ 數據不完整！請確認CNC計算器已正確導出數據。');
+                    return false;
+                }
+                
+                // 填入數據到表單
+                if (data.productName) {
+                    document.getElementById('productName').value = data.productName;
+                    console.log('填入產品名稱:', data.productName);
+                }
+                
+                // 修復：直接使用CNC計算器導出的座標格式
+                if (data.coordA) {
+                    const formattedA = formatCoordinate(data.coordA);
+                    document.getElementById('coordinateA').value = formattedA;
+                    console.log('A1座標 - 原始:', data.coordA, '格式化後:', formattedA);
+                }
+                
+                if (data.coordB) {
+                    const formattedB = formatCoordinate(data.coordB);
+                    document.getElementById('coordinateB').value = formattedB;
+                    console.log('B1座標 - 原始:', data.coordB, '格式化後:', formattedB);
+                }
+                
+                if (data.coordC) {
+                    const formattedC = formatCoordinate(data.coordC);
+                    document.getElementById('coordinateB3').value = formattedC;
+                    console.log('B3座標 - 原始:', data.coordC, '格式化後:', formattedC);
+                }
+                
+                // 填入角度數據
+                if (data.angle && !isNaN(parseFloat(data.angle))) {
+                    document.getElementById('angle').value = parseFloat(data.angle).toFixed(2);
+                    console.log(`填入角度: ${data.angle}°`);
+                }
+                
+                // 顯示導入的數據預覽
+                const previewDiv = document.getElementById('importPreview');
+                previewDiv.innerHTML = `
+產品名稱: ${data.productName || '未設定'}
+版本: ${data.version || '未指定'}
+角度: ${data.angle || '未設定'}°
+A1座標: ${data.coordA || '未設定'} (A刀路起點)
+B1座標: ${data.coordB || '未設定'} (B刀路起點)
+B3座標: ${data.coordC || '未設定'} (斜切終點)
+                `;
+                previewDiv.style.display = 'block';
+                
+                showImportStatus('success', '✅ 數據導入成功！已自動填入所有座標。');
+                return true;
+                
+            } catch (error) {
+                console.error('導入過程錯誤:', error);
+                showImportStatus('error', '❌ 導入過程中發生未知錯誤，請重試或手動輸入數據。');
+                return false;
+            }
+        }
+        
+        // 座標格式化函數
+        function formatCoordinate(coord) {
+            if (!coord) return '';
+            
+            coord = coord.toString().trim();
+            
+            // 如果已經是正確格式，直接返回（移除末尾的點）
+            if (/^X-?\d+\.?\d*Y-?\d+\.?\d*\.?$/.test(coord)) {
+                // 移除末尾的點，保持原始格式
+                return coord.endsWith('.') ? coord.slice(0, -1) : coord;
+            }
+            
+            // 提取X和Y座標
+            const xMatch = coord.match(/X(-?\d+\.?\d*)/);
+            const yMatch = coord.match(/Y(-?\d+\.?\d*)/);
+            
+            if (xMatch && yMatch) {
+                // 格式化為小數點後兩位
+                return `X${parseFloat(xMatch[1]).toFixed(2)}Y${parseFloat(yMatch[1]).toFixed(2)}`;
+            }
+            
+            return coord;
+        }
+        
+        // 生成G-CODE
+        function generateGCode() {
+            try {
+                console.log('開始生成G-CODE...');
+                
+                // 獲取輸入參數
+                const productName = document.getElementById('productName').value.trim() || '31F-07';
+                const coordinateA = document.getElementById('coordinateA').value.trim() || 'X-160.000Y1.000';
+                const coordinateB = document.getElementById('coordinateB').value.trim() || 'X-205.710Y-145.710';
+                const coordinateB3 = document.getElementById('coordinateB3').value.trim() || 'X-91.000Y9.000';
+                const angle = document.getElementById('angle').value.trim() || '0';
+                
+                // 獲取當前時間
+                const now = new Date();
+                const dateTime = formatDateTime(now);
+                
+                // 生成G-CODE內容
+                const gcode = createGCodeTemplate(productName, coordinateA, coordinateB, coordinateB3, angle, dateTime);
+                
+                // 顯示結果
+                document.getElementById('result').textContent = gcode;
+                
+                // 儲存當前數據
+                currentGCodeData = {
+                    productName: productName,
+                    coordinateA: coordinateA,
+                    coordinateB: coordinateB,
+                    coordinateB3: coordinateB3,
+                    angle: angle,
+                    gcode: gcode
+                };
+                
+                console.log('G-CODE生成完成');
+                showImportStatus('success', '✅ G-CODE已成功生成！');
+                
+            } catch (error) {
+                console.error('G-CODE生成錯誤:', error);
+                showImportStatus('error', '❌ G-CODE生成失敗：' + error.message);
+            }
+        }
+        
+        // G-CODE模板
+        function createGCodeTemplate(productName, coordinateA, coordinateB, coordinateB3, angle, dateTime) {
+            return `(651-G55)
+(${productName})
+(C=${angle})
+(!!!!!!G55!!!!!!)
+(---------O)
+(----------)
+(12mm mill   長腳, T8 H8 S1280 F120)
+
+
+
+(DRY RUN START)
+N1
+(12mm mill   CUT1 Z20.)
+G0G90G55${coordinateB} M3S1280
+G43H10Z70.
+
+M1
+G0G90Z30.(安全降刀)
+M1
+
+
+(!!)
+(DRY RUN )
+G1G90Z20.000 F200(處理深度: Z20.000)
+(精修開始)
+G1G91X60.000 F400
+G1G90${coordinateB3} F400
+(精修結束)
+
+(DRY RUN END)
+G0G90Z100.
+M5
+
+N2
+(12mm mill   FOOT UP)
+G0G90G55${coordinateA} M3S1280
+G43H10Z70.
+M8
+M1
+G0G90Z30.(安全降刀)
+M1
+(!!)
+
+(DRY RUN START)
+G1G90Z20.000 F200 (處理深度: Z20.000)
+(精修開始)
+G1G91X60.000 F200
+G1G91X-60.000 F400
+(精修結束)
+(DRY RUN END)
+
+G1G90Z-20.000 (處理深度: Z-20.000)
+(精修開始)
+G1G91X60.000 F200
+G1G91X-60.000 F400
+(精修結束)
+
+G1G90Z-40.000 (處理深度: Z-40.000)
+(精修開始)
+G1G91X60.000 F200
+G1G91X-60.000 F400
+(精修結束)
+
+G1G90Z-61.000 (處理深度: Z-61.000)
+(精修開始)
+G1G91X60.000 F200
+G1G91X-60.000 F400
+(精修結束)
+
+G0G90Z100.M9
+M5
+
+
+
+N3
+(12mm mill   CUT1 Z-16.)
+G0G90G55${coordinateB} M3S1280
+G43H10Z70.
+M8
+M1
+G0G90Z30.(安全降刀)
+M1
+G0G90Z10.(安全降刀)
+M1
+(!!)
+
+G1G90Z-16.000 (處理深度: Z-16.000)
+(精修開始)
+G1G91X60.000 F200
+G1G90${coordinateB3} F200
+(精修結束)
+
+G0G90Z100.M9
+M5
+
+
+N4
+(12mm mill   CUT2 Z-30.)
+G0G90G55${coordinateB} M3S1280
+G43H10Z70.
+M8
+M1
+G0G90Z30.(安全降刀)
+M1
+G0G90Z10.(安全降刀)
+M1
+(!!)
+
+G1G90Z-30.000 (處理深度: Z-30.000)
+(精修開始)
+G1G91X60.000 F200
+G1G90${coordinateB3} F200
+(精修結束)
+
+G0G90Z100.M9
+M5
+
+
+N5
+(12mm mill   CUT2 Z-50.)
+G0G90G55${coordinateB} M3S1280
+G43H10Z70.
+M8
+M1
+G0G90Z30.(安全降刀)
+M1
+G0G90Z10.(安全降刀)
+M1
+(!!)
+
+G1G90Z-45.000 (處理深度: Z-45.000)
+(精修開始)
+G1G91X60.000 F200
+G1G90${coordinateB3} F200
+(精修結束)
+
+G0G90Z100.M9
+M5
+
+
+
+
+N5
+(12mm mill   CUT3 Z-61.)
+G0G90G55${coordinateB} M3S1280
+G43H10Z70.
+M8
+M1
+G0G90Z30.(安全降刀)
+M1
+G0G90Z10.(安全降刀)
+M1
+(!!)
+
+G1G90Z-61.000 (處理深度: Z-61.000)
+(精修開始)
+G1G91X60.000 F200
+G1G90${coordinateB3} F200
+(精修結束)
+
+G0G90Z100.M9
+M5
+
+
+G0G91X-600.
+
+M30
+
+(生成時間: ${dateTime})`;
+        }
+        
+        // 複製到剪貼板
+        function copyToClipboard() {
+            try {
+                const result = document.getElementById('result');
+                if (result.textContent.includes('請點擊')) {
+                    showImportStatus('error', '❌ 請先生成G-CODE再複製');
+                    return;
+                }
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(result.textContent).then(() => {
+                        showImportStatus('success', '✅ G-CODE已複製到剪貼板！');
+                    }).catch(() => {
+                        fallbackCopy(result.textContent);
+                    });
+                } else {
+                    fallbackCopy(result.textContent);
+                }
+            } catch (error) {
+                showImportStatus('error', '❌ 複製失敗：' + error.message);
+            }
+        }
+        
+        // 備用複製方法
+        function fallbackCopy(text) {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '-1000px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    showImportStatus('success', '✅ G-CODE已複製到剪貼板！');
+                } else {
+                    showImportStatus('error', '❌ 複製失敗，請手動選取複製');
+                }
+            } catch (error) {
+                showImportStatus('error', '❌ 複製失敗：' + error.message);
+            }
+        }
+        
+        // 下載G-CODE
+        function downloadGCode() {
+            try {
+                const result = document.getElementById('result');
+                if (result.textContent.includes('請點擊')) {
+                    showImportStatus('error', '❌ 請先生成G-CODE再下載');
+                    return;
+                }
+                
+                const productName = document.getElementById('productName').value.trim() || 'G-CODE';
+                const blob = new Blob([result.textContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = productName + '.TXT';
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
+                
+                showImportStatus('success', `✅ 已下載為 ${productName}.TXT`);
+            } catch (error) {
+                showImportStatus('error', '❌ 下載失敗：' + error.message);
+            }
+        }
+        
+        // 清除所有數據
+        function clearAll() {
+            try {
+                // 清除表單
+                document.getElementById('productName').value = '';
+                document.getElementById('coordinateA').value = '';
+                document.getElementById('coordinateB').value = '';
+                document.getElementById('coordinateB3').value = '';
+                document.getElementById('angle').value = '';
+                
+                // 清除結果
+                document.getElementById('result').innerHTML = '<span class="placeholder-text">請點擊「生成程式」按鈕開始...</span>';
+                
+                // 清除狀態
+                document.getElementById('importStatus').style.display = 'none';
+                document.getElementById('importPreview').style.display = 'none';
+                document.getElementById('autoImportNotice').style.display = 'none';
+                
+                // 清除localStorage
+                localStorage.removeItem('cncCalculatorData');
+                localStorage.removeItem('autoImportFlag');
+                localStorage.removeItem('autoImportTimestamp');
+                localStorage.removeItem('forceAutoImport');
+                localStorage.removeItem('selectedVersion');
+                
+                // 清除全域變數
+                currentGCodeData = null;
+                
+                console.log('已清除所有數據');
+                showImportStatus('success', '✅ 已清除所有數據');
+            } catch (error) {
+                showImportStatus('error', '❌ 清除失敗：' + error.message);
+            }
+        }
+        
+        // 顯示/隱藏自動導入提示
+        function showAutoImportNotice() {
+            document.getElementById('autoImportNotice').style.display = 'block';
+        }
+        
+        function hideAutoImportNotice() {
+            document.getElementById('autoImportNotice').style.display = 'none';
+        }
+        
+        // 顯示導入狀態
+        function showImportStatus(type, message) {
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            // 根據類型設定隱藏延遲
+            const hideDelay = type === 'success' ? 5000 : 4000;
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, hideDelay);
+        }
+        
+        // 格式化日期時間
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+    </script>
+</body>
+</html>

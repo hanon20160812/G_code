@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>651 CNC計算器 - G55專用版本</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #00695c;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #00695c;
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .section h3 {
+            color: #00695c;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 15px;
+        }
+        
+        label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 120px;
+            font-size: 14px;
+        }
+        
+        select {
+            width: 150px;
+        }
+        
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            font-weight: bold;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+        }
+        
+        .btn-secondary {
+            background: #00695c;
+        }
+        
+        .btn-secondary:hover {
+            background: #004d40;
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+        }
+        
+        .btn-warning:hover {
+            background: #e68900;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-g55 {
+            background: #94e2d5;
+            color: #1e1e2e;
+        }
+        
+        .btn-g55:hover {
+            background: #7dd3c0;
+        }
+        
+        .g55-header {
+            background: #e0f2f1;
+            border: 2px solid #00695c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .g55-header h3 {
+            color: #00695c;
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+        
+        .g55-indicator {
+            background: rgba(148, 226, 213, 0.3);
+            color: #00695c;
+            border: 1px solid #94e2d5;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 5px 0;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .results {
+            background: #e0f2f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .results h4 {
+            color: #00695c;
+            margin-top: 0;
+        }
+        
+        .coord-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .coord-table th, .coord-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .coord-table th {
+            background: #00695c;
+            color: white;
+        }
+        
+        .export-section {
+            background: #fff8e1;
+            border: 2px solid #ffb74d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .data-preview {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .export-buttons button {
+            flex: 1;
+            min-width: 180px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .debug-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .scroll-up-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: #edcf6c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        
+        .scroll-up-btn:hover {
+            background: #ce8c3a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        
+        .scroll-up-btn.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 版本號組件樣式 */
+        .version-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .version-tooltip {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: #2d3748;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            max-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+        
+        .version-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #2d3748;
+        }
+        
+        .version-tooltip.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .version-tooltip h4 {
+            margin: 0 0 8px 0;
+            color: #68d391;
+            font-size: 1rem;
+        }
+        
+        .version-tooltip .version-info {
+            margin: 8px 0;
+            padding: 4px 0;
+        }
+        
+        .version-tooltip .version-stability {
+            display: inline-block;
+            background: #68d391;
+            color: #1a202c;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .version-tooltip .features {
+            margin: 12px 0;
+            padding-left: 16px;
+        }
+        
+        .version-tooltip .features li {
+            margin: 4px 0;
+            color: #e2e8f0;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .version-badge {
+                top: 15px;
+                right: 15px;
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+            
+            .version-tooltip {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                right: auto;
+                max-width: 90vw;
+            }
+            
+            .version-tooltip::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 版本號徽章 -->
+    <div class="version-badge">
+        <span>🚀</span>
+        <span>v4.1.0</span>
+    </div>
+    
+    <!-- 版本號提示框 -->
+    <div class="version-tooltip" id="versionTooltip">
+        <h4>651 CNC計算器</h4>
+        <div class="version-info">
+            <span>v4.1.0</span>
+            <span class="version-stability" style="background-color: #20e15d;">已量產</span>
+            
+        </div> 
+        <p>更新日期：2025年7月17日</p>
+        <ul class="features">
+            -------------開發紀錄-------------
+            <li>🎯 G55專用座標系統</li>
+            <li>📐 智能梯形計算</li>
+            <li>🔗 一鍵導出G-CODE</li>
+            <li>🔗 優化G-CODE程式</li>
+            -------------製作歷程-------------
+            <li>🔗 7/15 2號機G55做完651-2 L、R</Ri:a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎯 651 CNC計算器 - G55專用版本</h1>
+            <p>專為G55座標系統設計的CNC計算器</p>
+        </div>
+        
+        <!-- G55版本說明 -->
+        <div class="g55-header">
+            <h3>G55 左側加工模式</h3>
+            <div class="g55-indicator">左側版本 - 原點(0,0)在右上角</div>
+            <p>路線方向：A2起點 → A1終點</p>
+        </div>
+        
+        <!-- 端點輸入區 -->
+        <div class="section" id="coordinateInput">
+            <h3>📐 端點座標輸入</h3>
+            <div class="input-row">
+                <label>產品名稱：</label>
+                <input type="text" id="productName" placeholder="如：31F-07" value="31F-07">
+            </div>
+            <div class="input-row">
+                <label>上方端點：</label>
+                <input type="text" id="topPoint" placeholder="X100 Y0.00" value="X-100 Y0.00">
+            </div>
+            <div class="input-row">
+                <label>下方端點：</label>
+                <input type="text" id="bottomPoint" placeholder="X50 Y-50" value="X-50 Y-50">
+            </div>
+        </div>
+        
+        <!-- 參數設定區 -->
+        <div class="section">
+            <h3>⚙️ 刀具參數設定</h3>
+            <div class="input-row">
+                <label>上邊偏移：</label>
+                <input type="number" id="topOffset" value="9" step="0.1">
+                <span>mm</span>
+            </div>
+            <div class="input-row">
+                <label>下邊偏移：</label>
+                <input type="number" id="bottomOffset" value="4.29" step="0.1">
+                <span>mm</span>
+            </div>
+            <div class="input-row">
+                <label>斜邊偏移：</label>
+                <input type="number" id="slopeOffset" value="6" step="0.1">
+                <span>mm</span>
+            </div>
+            <div class="input-row">
+                <label>X偏移量：</label>
+                <input type="number" id="xOffset" value="60" step="0.1">
+                <span>mm</span>
+            </div>
+        </div>
+        
+        <!-- 操作按鈕 -->
+        <div style="text-align: center;">
+            <button class="btn" onclick="calculateCNC()">🔧 計算CNC點位</button>
+            <button class="btn btn-danger" onclick="clearAll()">🗑️ 清除重置</button>
+        </div>
+        
+        <!-- 計算結果區 -->
+        <div id="resultsSection" style="display: none;">
+            <div class="results">
+                <h4>📊 CNC點位計算結果</h4>
+                <table class="coord-table">
+                    <tr>
+                        <th>點位名稱</th>
+                        <th>X座標</th>
+                        <th>Y座標</th>
+                        <th>說明</th>
+                    </tr>
+                    <tbody id="coordTable">
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 20px;">
+                    <p><strong>🎯 梯形參數：</strong></p>
+                    <p id="trapezoidParams"></p>
+                </div>
+            </div>
+            
+            <!-- 導出按鈕區 -->
+            <div class="export-section">
+                <h4>📤 導出至G-CODE生成器</h4>
+                <p>點擊下方按鈕將數據導出並開啟G55 G-CODE生成器：</p>
+                
+                <div class="export-buttons">
+                    <button class="btn btn-g55" onclick="exportAndOpenGCode('G55')">🔗 導出並開啟 G55</button>
+                    <button class="btn btn-warning" onclick="exportToGCode()">📤 僅導出數據</button>
+                    <button class="btn btn-secondary" onclick="copyData()">📋 複製數據</button>
+                </div>
+                
+                <div class="success-msg" id="successMsg"></div>
+                <div class="error-msg" id="errorMsg"></div>
+                
+                <details>
+                    <summary>📄 查看數據內容</summary>
+                    <div class="data-preview" id="dataPreview"></div>
+                </details>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 往上浮動按鈕 -->
+    <button class="scroll-up-btn" id="scrollUpBtn" onclick="scrollToCoordinateInput()" title="回到端點輸入">
+        ▲
+    </button>
+
+    <script>
+        // 全域變數
+        let currentCNCData = null;
+        let debugInfo = [];
+        
+        function addDebugInfo(info) {
+            debugInfo.push(info);
+            console.log(info);
+        }
+        
+        function calculateCNC() {
+            console.log('calculateCNC 函數被調用');
+            
+            debugInfo = []; // 清除調試信息
+            
+            try {
+                // 取得輸入值並解析CAD格式座標
+                const productName = document.getElementById('productName').value || "未命名";
+                const topPointStr = document.getElementById('topPoint').value;
+                const bottomPointStr = document.getElementById('bottomPoint').value;
+                
+                addDebugInfo(`輸入值 - 產品: ${productName}, 上方: ${topPointStr}, 下方: ${bottomPointStr}`);
+                
+                // 解析CAD格式座標 (例：X100 Y0.00)
+                function parseCADCoord(coordStr) {
+                    const xMatch = coordStr.match(/X(-?\d+\.?\d*)/);
+                    const yMatch = coordStr.match(/Y(-?\d+\.?\d*)/);
+                    if (!xMatch || !yMatch) return null;
+                    return {
+                        x: parseFloat(xMatch[1]),
+                        y: parseFloat(yMatch[1])
+                    };
+                }
+                
+                const topPoint = parseCADCoord(topPointStr);
+                const bottomPoint = parseCADCoord(bottomPointStr);
+                
+                if (!topPoint || !bottomPoint) {
+                    showError('請輸入正確的CAD座標格式，例：X100 Y0.00');
+                    return;
+                }
+                
+                addDebugInfo(`解析座標 - 上方: (${topPoint.x}, ${topPoint.y}), 下方: (${bottomPoint.x}, ${bottomPoint.y})`);
+                
+                // 取得偏移參數
+                const topOffset = parseFloat(document.getElementById('topOffset').value);
+                const bottomOffset = parseFloat(document.getElementById('bottomOffset').value);
+                const slopeOffset = parseFloat(document.getElementById('slopeOffset').value);
+                const xOffset = parseFloat(document.getElementById('xOffset').value);
+                
+                addDebugInfo(`偏移參數 - 上邊: ${topOffset}, 下邊: ${bottomOffset}, 斜邊: ${slopeOffset}, X偏移: ${xOffset}`);
+                
+                // 計算梯形參數
+                const height = Math.abs(topPoint.y - bottomPoint.y);
+                const topLength = Math.abs(topPoint.x);
+                const bottomLength = Math.abs(bottomPoint.x);
+                const horizontalDiff = Math.abs(topPoint.x - bottomPoint.x);
+                const verticalDiff = Math.abs(topPoint.y - bottomPoint.y);
+                const angle = horizontalDiff > 0 ? Math.atan(verticalDiff / horizontalDiff) * (180 / Math.PI) : 0;
+                
+                addDebugInfo(`梯形參數 - 高度: ${height}, 角度: ${angle}°`);
+                
+                // 計算G55座標
+                const cncPoints = calculateG55Coordinates(topPoint, bottomPoint, topOffset, bottomOffset, slopeOffset, xOffset);
+                
+                // 儲存完整數據
+                currentCNCData = {
+                    version: 'G55',
+                    productName: productName,
+                    angle: angle,
+                    trapezoid: {
+                        topLength: topLength,
+                        bottomLength: bottomLength,
+                        height: height
+                    },
+                    coordinates: cncPoints
+                };
+                
+                addDebugInfo(`計算完成，生成 ${Object.keys(cncPoints).length} 個點位`);
+                
+                // 顯示結果
+                displayResults(currentCNCData);
+                
+            } catch (error) {
+                console.error('計算錯誤:', error);
+                addDebugInfo(`計算錯誤: ${error.message}`);
+                showError('計算過程中發生錯誤：' + error.message);
+            }
+        }
+        
+        function calculateG55Coordinates(topPoint, bottomPoint, topOffset, bottomOffset, slopeOffset, xOffset) {
+            addDebugInfo('開始G55座標計算 - 651專用版本');
+            
+            // 將輸入座標轉換為絕對值進行計算
+            const absTopX = Math.abs(topPoint.x);
+            const absBottomX = Math.abs(bottomPoint.x);
+            
+            addDebugInfo(`絕對值端點 - 上方: (${absTopX}, ${topPoint.y}), 下方: (${absBottomX}, ${bottomPoint.y})`);
+            
+            // 四個頂點座標
+            const A = {x: 0, y: topPoint.y};
+            const B = {x: 0, y: bottomPoint.y};
+            const C = {x: absBottomX, y: bottomPoint.y};
+            const D = {x: absTopX, y: topPoint.y};
+            
+            addDebugInfo(`G55梯形頂點 - A: (${A.x}, ${A.y}), B: (${B.x}, ${B.y}), C: (${C.x}, ${C.y}), D: (${D.x}, ${D.y})`);
+            
+            // 斜邊偏移向量計算
+            const slopeDx = D.x - C.x;
+            const slopeDy = D.y - C.y;
+            const slopeAngle = Math.atan2(slopeDy, slopeDx);
+            const perpAngle = slopeAngle - Math.PI/2;
+            const perpX = Math.cos(perpAngle) * slopeOffset;
+            const perpY = Math.sin(perpAngle) * slopeOffset;
+            
+            // 計算偏移後的端點
+            const offsetTop = {
+                x: D.x + perpX,
+                y: D.y + perpY
+            };
+            const offsetBottom = {
+                x: C.x + perpX,
+                y: C.y + perpY
+            };
+            
+            // 偏移線方程式計算
+            const slope = (offsetTop.y - offsetBottom.y) / (offsetTop.x - offsetBottom.x);
+            const intercept = offsetTop.y - slope * offsetTop.x;
+            
+            // 交點計算函數
+            function getXAtY(y) {
+                return (y - intercept) / slope;
+            }
+            
+            // 上邊界和下邊界 - 使用651專用設定
+            const upperBoundY = topPoint.y + topOffset;      // 0 + 9 = 9
+            const lowerBoundY = bottomPoint.y + bottomOffset; // -50 + 4.29 = -45.71
+            
+            addDebugInfo(`G55 Y邊界 - 上邊界: ${upperBoundY}, 下邊界: ${lowerBoundY}`);
+            
+            // B3點: 上邊界交點 (斜切終點)
+            const b3X = getXAtY(upperBoundY);
+            const B3_point = {
+                x: -Math.abs(b3X),  // G55版本X坐標為負數
+                y: upperBoundY
+            };
+            
+            // A刀路終點: Y座標設定為1.0 (651專用設定)
+            const aY = 1.0;
+            const aEndX = getXAtY(aY);
+            const A_END_point = {
+                x: -Math.abs(aEndX),  // G55版本X坐標為負數
+                y: aY
+            };
+            
+            // B刀路終點: Y座標設定為-145.71 (651專用設定)
+            const bY = -145.71;
+            const bEndX = getXAtY(bY);
+            const B_END_point = {
+                x: -Math.abs(bEndX),  // G55版本X坐標為負數
+                y: bY
+            };
+            
+            // A1 (A刀路起點): A刀路終點往左60mm
+            const A1_point = {
+                x: A_END_point.x - 60,  // 往左60mm (X減少60)
+                y: A_END_point.y
+            };
+            
+            // B1 (B刀路起點): B刀路終點往左60mm
+            const B1_point = {
+                x: B_END_point.x - 60,  // 往左60mm (X減少60)
+                y: B_END_point.y
+            };
+            
+            addDebugInfo(`關鍵點位計算結果:`);
+            addDebugInfo(`- A刀路終點: X${A_END_point.x}, Y${A_END_point.y}`);
+            addDebugInfo(`- B刀路終點: X${B_END_point.x}, Y${B_END_point.y}`);
+            addDebugInfo(`- A1 (A刀路起點): X${A1_point.x}, Y${A1_point.y}`);
+            addDebugInfo(`- B1 (B刀路起點): X${B1_point.x}, Y${B1_point.y}`);
+            addDebugInfo(`- B3 (斜切終點): X${B3_point.x}, Y${B3_point.y}`);
+            
+            // 返回五個關鍵點位 - 用於導出到G-CODE生成器
+            return {
+                A_END: {x: Math.round(A_END_point.x * 100) / 100, y: A_END_point.y, name: "A刀路終點"},
+                B_END: {x: Math.round(B_END_point.x * 100) / 100, y: B_END_point.y, name: "B刀路終點"},
+                A1: {x: Math.round(A1_point.x * 100) / 100, y: A1_point.y, name: "A1 (A刀路起點)"},
+                B1: {x: Math.round(B1_point.x * 100) / 100, y: B1_point.y, name: "B1 (B刀路起點)"},
+                B3: {x: Math.round(B3_point.x * 100) / 100, y: B3_point.y, name: "B3 (斜切終點)"}
+            };
+        }
+        
+        function displayResults(data) {
+            // 顯示結果區域
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // 填入座標表格
+            const tableBody = document.getElementById('coordTable');
+            tableBody.innerHTML = '';
+            
+            // 只顯示關鍵點位：A1、B1、B3 (隱藏A_END、B_END)
+            const keyPoints = ['A1', 'B1', 'B3'];
+            
+            keyPoints.forEach(key => {
+                if (data.coordinates[key]) {
+                    const point = data.coordinates[key];
+                    const row = tableBody.insertRow();
+                    
+                    // 為A1、B1、B3添加特殊標記
+                    const markStyle = 'background: #ffeb3b; color: #333; font-weight: bold;';
+                    const markIcon = '⭐ ';
+                    
+                    row.innerHTML = `
+                        <td style="${markStyle}"><strong>${markIcon}${key}</strong></td>
+                        <td style="${markStyle}">${point.x.toFixed(2)}</td>
+                        <td style="${markStyle}">${point.y.toFixed(2)}</td>
+                        <td style="${markStyle}">${point.name}</td>
+                    `;
+                }
+            });
+            
+            // 顯示梯形參數
+            document.getElementById('trapezoidParams').innerHTML = `
+                上邊長度: ${data.trapezoid.topLength.toFixed(2)}mm, 
+                下邊長度: ${data.trapezoid.bottomLength.toFixed(2)}mm, 
+                高度: ${data.trapezoid.height.toFixed(2)}mm, 
+                斜角: ${data.angle.toFixed(2)}°
+            `;
+            
+            // 更新數據預覽
+            updateDataPreview();
+            
+            // 滾動到結果區域
+            document.getElementById('resultsSection').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function updateDataPreview() {
+            if (!currentCNCData) return;
+            
+            // 使用標準座標格式 (不以點結尾)
+            const coordA1 = `X${currentCNCData.coordinates.A1.x.toFixed(3)}Y${currentCNCData.coordinates.A1.y.toFixed(3)}`;
+            const coordB1 = `X${currentCNCData.coordinates.B1.x.toFixed(3)}Y${currentCNCData.coordinates.B1.y.toFixed(3)}`;
+            const coordAEnd = `X${currentCNCData.coordinates.A_END.x.toFixed(3)}Y${currentCNCData.coordinates.A_END.y.toFixed(3)}`;
+            const coordBEnd = `X${currentCNCData.coordinates.B_END.x.toFixed(3)}Y${currentCNCData.coordinates.B_END.y.toFixed(3)}`;
+            const coordB3 = `X${currentCNCData.coordinates.B3.x.toFixed(3)}Y${currentCNCData.coordinates.B3.y.toFixed(3)}`;
+            
+            const exportData = {
+                version: currentCNCData.version,
+                productName: currentCNCData.productName,
+                angle: currentCNCData.angle.toFixed(2),
+                coordA: coordA1,       // 修改：A1座標改為coordA
+                coordB: coordB1,       // 修改：B1座標改為coordB
+                coordC: coordB3        // 修改：B3座標改為coordC
+            };
+            
+            document.getElementById('dataPreview').textContent = JSON.stringify(exportData, null, 2);
+            
+            // 添加調試信息
+            addDebugInfo(`數據預覽更新: A1=${coordA1}, A終點=${coordAEnd}, B1=${coordB1}, B終點=${coordBEnd}, B3=${coordB3}`);
+        }
+        
+        function exportToGCode() {
+            if (!currentCNCData) {
+                showError('請先計算CNC點位');
+                return;
+            }
+            
+            try {
+                // 修改為小數點後兩位精度
+                const coordA1 = `X${currentCNCData.coordinates.A1.x.toFixed(2)}Y${currentCNCData.coordinates.A1.y.toFixed(2)}`;
+                const coordB1 = `X${currentCNCData.coordinates.B1.x.toFixed(2)}Y${currentCNCData.coordinates.B1.y.toFixed(2)}`;
+                const coordAEnd = `X${currentCNCData.coordinates.A_END.x.toFixed(2)}Y${currentCNCData.coordinates.A_END.y.toFixed(2)}`;
+                const coordBEnd = `X${currentCNCData.coordinates.B_END.x.toFixed(2)}Y${currentCNCData.coordinates.B_END.y.toFixed(2)}`;
+                const coordB3 = `X${currentCNCData.coordinates.B3.x.toFixed(2)}Y${currentCNCData.coordinates.B3.y.toFixed(2)}`;
+                
+                const exportData = {
+                    version: currentCNCData.version,
+                    productName: currentCNCData.productName,
+                    angle: currentCNCData.angle.toFixed(2),
+                    coordA: coordA1,       // 修改：A1座標改為coordA
+                    coordB: coordB1,       // 修改：B1座標改為coordB
+                    coordC: coordB3        // 修改：B3座標改為coordC
+                };
+                
+                const dataStr = JSON.stringify(exportData);
+                localStorage.setItem('cncCalculatorData', dataStr);
+                localStorage.setItem('autoImportFlag', 'true');
+                localStorage.setItem('autoImportTimestamp', Date.now().toString());
+                localStorage.setItem('selectedVersion', 'G55');
+                
+                showSuccess(`✅ G55數據已成功導出到本地儲存！`);
+                console.log('導出數據:', exportData);
+                
+                // 添加調試信息
+                addDebugInfo(`導出數據: ${dataStr}`);
+                
+            } catch (error) {
+                console.error('導出錯誤詳情:', error);
+                showError('數據導出失敗：' + error.message);
+                addDebugInfo(`導出錯誤: ${error.message}`);
+            }
+        }
+        
+        function exportAndOpenGCode(version) {
+            if (!currentCNCData) {
+                showError('請先計算CNC點位');
+                return;
+            }
+            
+            exportToGCode();
+            
+            setTimeout(() => {
+                try {
+                    localStorage.setItem('autoImportFlag', 'true');
+                    localStorage.setItem('autoImportTimestamp', Date.now().toString());
+                    localStorage.setItem('forceAutoImport', 'true');
+                    localStorage.setItem('selectedVersion', 'G55');
+                    
+                    const filename = '651_g55_gcode.html';
+                    const targetUrl = `${filename}?from=calculator&autoImport=true&version=G55&t=${Date.now()}`;
+                    
+                    const newWindow = window.open(targetUrl, 'gcodeGeneratorG55', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                    
+                    if (newWindow) {
+                        showSuccess(`✅ G55數據已導出並正在打開G-CODE生成器...`);
+                    } else {
+                        showError(`❌ 瀏覽器阻止了彈出視窗`);
+                        setTimeout(() => {
+                            if (confirm(`無法打開新視窗，是否在當前頁面打開G55 G-CODE生成器？`)) {
+                                window.location.href = targetUrl;
+                            }
+                        }, 1000);
+                    }
+                } catch (error) {
+                    showError(`❌ 無法打開G55 G-CODE生成器頁面`);
+                }
+            }, 300);
+        }
+        
+        function copyData() {
+            if (!currentCNCData) {
+                showError('請先計算CNC點位');
+                return;
+            }
+            
+            try {
+                const dataText = document.getElementById('dataPreview').textContent;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(dataText).then(() => {
+                        showSuccess('✅ 數據已複製到剪貼板！');
+                    }).catch(() => {
+                        fallbackCopy(dataText);
+                    });
+                } else {
+                    fallbackCopy(dataText);
+                }
+            } catch (error) {
+                showError('複製失敗，請手動選取並複製數據');
+            }
+        }
+        
+        function fallbackCopy(text) {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '-1000px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    showSuccess('✅ 數據已複製到剪貼板！');
+                } else {
+                    showError('❌ 複製失敗，請手動選取複製');
+                }
+            } catch (error) {
+                showError('❌ 複製失敗：' + error.message);
+            }
+        }
+        
+        function showSuccess(message) {
+            hideAllMessages();
+            const successMsg = document.getElementById('successMsg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
+        }
+        
+        function showError(message) {
+            hideAllMessages();
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => { errorMsg.style.display = 'none'; }, 5000);
+        }
+        
+        function hideAllMessages() {
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+        
+        function clearAll() {
+            try {
+                debugInfo = [];
+                currentCNCData = null;
+                
+                // 重置輸入欄位
+                document.getElementById('productName').value = '';
+                document.getElementById('topPoint').value = '';
+                document.getElementById('bottomPoint').value = '';
+                
+                document.getElementById('topOffset').value = '9';
+                document.getElementById('bottomOffset').value = '4.29';
+                document.getElementById('slopeOffset').value = '6';
+                document.getElementById('xOffset').value = '60';
+                
+                // 隱藏結果區域
+                document.getElementById('resultsSection').style.display = 'none';
+                
+                // 清除本地數據
+                localStorage.removeItem('cncCalculatorData');
+                localStorage.removeItem('autoImportFlag');
+                localStorage.removeItem('autoImportTimestamp');
+                localStorage.removeItem('forceAutoImport');
+                localStorage.removeItem('selectedVersion');
+                
+                hideAllMessages();
+                showSuccess('✅ 已清除所有數據');
+            } catch (error) {
+                showError('清除失敗：' + error.message);
+            }
+        }
+        
+        // 頁面載入時的初始化
+        window.onload = function() {
+            try {
+                // 設置預設值，使用31F-07的測試數據
+                document.getElementById('productName').value = '31F-07';
+                document.getElementById('topPoint').value = 'X-100 Y0.00';
+                document.getElementById('bottomPoint').value = 'X-50 Y-50';
+                
+                addDebugInfo('651 CNC計算器已初始化，準備就緒');
+                console.log('頁面載入完成，所有功能已就緒');
+                
+                // 初始化版本號提示功能
+                initVersionTooltip();
+            } catch (error) {
+                console.error('頁面初始化錯誤:', error);
+                addDebugInfo(`初始化錯誤: ${error.message}`);
+            }
+        };
+        
+        // 版本號提示功能初始化
+        function initVersionTooltip() {
+            const versionBadge = document.querySelector('.version-badge');
+            const versionTooltip = document.getElementById('versionTooltip');
+            
+            let tooltipTimeout;
+            let isTooltipVisible = false;
+            
+            // 懸停顯示提示框
+            versionBadge.addEventListener('mouseenter', function() {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = setTimeout(() => {
+                    if (!isTooltipVisible) {
+                        versionTooltip.classList.add('show');
+                        isTooltipVisible = true;
+                    }
+                }, 300); // 300ms延遲防止誤觸
+            });
+            
+            // 離開隱藏提示框
+            versionBadge.addEventListener('mouseleave', function() {
+                clearTimeout(tooltipTimeout);
+                setTimeout(() => {
+                    versionTooltip.classList.remove('show');
+                    isTooltipVisible = false;
+                }, 100);
+            });
+            
+            console.log('版本號提示功能初始化完成');
+        }
+        
+        // 往上按鈕功能
+        function scrollToCoordinateInput() {
+            const coordinateSection = document.getElementById('coordinateInput');
+            if (coordinateSection) {
+                coordinateSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+        
+        // 監聽滾動事件，控制往上按鈕的顯示/隱藏
+        window.addEventListener('scroll', function() {
+            const scrollUpBtn = document.getElementById('scrollUpBtn');
+            const coordinateSection = document.getElementById('coordinateInput');
+            
+            if (coordinateSection && scrollUpBtn) {
+                const coordinateSectionBottom = coordinateSection.offsetTop + coordinateSection.offsetHeight;
+                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // 當滾動超過端點座標輸入區域底部時顯示按鈕
+                if (scrollPosition > coordinateSectionBottom + 100) {
+                    scrollUpBtn.classList.add('show');
+                } else {
+                    scrollUpBtn.classList.remove('show');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
