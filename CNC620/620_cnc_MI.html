@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>620MI 銑削G-CODE生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(90deg, #e67e22 0%, #d35400 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .panel {
+            padding: 25px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e67e22;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 8px;
+        }
+
+        .input-group input[type="number"],
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #e67e22;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 13px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #e67e22;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #d35400 0%, #ba4a00 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+        }
+
+        .preview-box {
+            background: #fff8f0;
+            border: 2px solid #f0d9c4;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 120px;
+        }
+
+        .preview-box h4 {
+            font-size: 14px;
+            color: #d35400;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .coordinate-list {
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: "Consolas", monospace;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .coordinate-item {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f0d9c4;
+            background: white;
+            margin-bottom: 4px;
+            border-radius: 4px;
+        }
+
+        .stats-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-item {
+            background: white;
+            border: 2px solid #e67e22;
+            border-radius: 6px;
+            padding: 15px 25px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e67e22;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: #fff8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .param-table th,
+        .param-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0d9c4;
+        }
+
+        .param-table th {
+            background: #e67e22;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .param-table td {
+            font-family: "Consolas", monospace;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+
+        .param-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        #gcodeOutput {
+            background: #2c3e50;
+            color: #f39c12;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 13px;
+            min-height: 500px;
+            border: none;
+            padding: 15px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e67e22;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .warning-text {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .success-text {
+            color: #27ae60;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+
+            .panel:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>620MI 銑削G-CODE生成器</h1>
+            <p>專為 12mm 銑刀槽銑加工設計 | 識別 diameter=7.47 特徵點 | 基於實測加工參數</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- 左欄：輸入區 -->
+            <div class="panel">
+                <div class="panel-header">📥 輸入區</div>
+
+                <div class="input-group">
+                    <label for="productName">品名</label>
+                    <input type="text" id="productName" placeholder="例如: 6F-01, 8F-02" value="">
+                </div>
+
+                <div class="input-group">
+                    <label for="workpieceLength">工件長度 (L) <span class="info-badge">必填</span></label>
+                    <input type="number" id="workpieceLength" placeholder="例如: 1864, 2500, 3200" value="">
+                </div>
+
+                <div class="input-group">
+                    <label for="cadCoordinates">銑削起始點座標 (JSON 格式) <span class="info-badge">diameter=7.47</span></label>
+                    <textarea id="cadCoordinates" rows="10" placeholder='{"coordinates":[
+  {"x": 942.5, "y": -78, "diameter": 7.47},
+  {"x": 1500, "y": -78, "diameter": 7.47},
+  {"x": 2100, "y": -78, "diameter": 7.47}
+]}'></textarea>
+                </div>
+
+                <button onclick="pasteFromClipboard()">📋 從剪貼簿貼上</button>
+                <button class="btn-warning" onclick="processCoordinates()">🔄 處理座標</button>
+
+                <div class="stats-box">
+                    <div class="stat-item">
+                        <div class="stat-label">銑削位置數量</div>
+                        <div class="stat-value" id="millingCount">0</div>
+                    </div>
+                </div>
+
+                <div class="preview-box">
+                    <h4>銑削起始點預覽 (diameter=7.47)</h4>
+                    <div class="coordinate-list" id="previewMilling"></div>
+                </div>
+            </div>
+
+            <!-- 中欄：參數顯示 -->
+            <div class="panel">
+                <div class="panel-header">⚙️ 加工參數</div>
+
+                <table class="param-table">
+                    <thead>
+                        <tr>
+                            <th>參數項目</th>
+                            <th>設定值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>刀具</strong></td>
+                            <td>T8 H8 (12mm mill)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>主軸轉速</strong></td>
+                            <td>S1280 RPM</td>
+                        </tr>
+                        <tr>
+                            <td><strong>銑削進給</strong></td>
+                            <td>F120 mm/min</td>
+                        </tr>
+                        <tr>
+                            <td><strong>快速進給</strong></td>
+                            <td>F200 mm/min</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第一層深度</strong></td>
+                            <td>Z-8.000</td>
+                        </tr>
+                        <tr>
+                            <td><strong>第二層深度</strong></td>
+                            <td>Z-15.500</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 25px; padding: 15px; background: #fff3cd; border-radius: 6px; border: 2px solid #ffc107;">
+                    <h4 style="color: #856404; margin-bottom: 10px; font-size: 14px;">📌 銑削路徑說明</h4>
+                    <ul style="color: #856404; font-size: 12px; line-height: 1.8; padding-left: 20px;">
+                        <li><strong>每層包含兩階段</strong>: 粗修 + 精修</li>
+                        <li><strong>粗修路徑</strong>: Y6 → X-15 → Y78 → X10 → Y-84</li>
+                        <li><strong>精修路徑</strong>: X-16 → Y90 → X21 → Y-90</li>
+                        <li><strong>兩層加工</strong>: Z-8 和 Z-15.5</li>
+                        <li><strong>增量模式</strong>: G91 相對座標移動</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 25px; padding: 15px; background: #d1ecf1; border-radius: 6px; border: 2px solid #17a2b8;">
+                    <h4 style="color: #0c5460; margin-bottom: 10px; font-size: 14px;">ℹ️ 使用說明</h4>
+                    <ol style="color: #0c5460; font-size: 12px; line-height: 1.8; padding-left: 20px;">
+                        <li>在 CAD 繪製 diameter=7.47 圓標記銑削位置</li>
+                        <li>使用 LISP 提取座標為 JSON 格式</li>
+                        <li>輸入品名和工件長度</li>
+                        <li>貼上 JSON 座標並處理</li>
+                        <li>檢查預覽確認位置正確</li>
+                        <li>生成完整 G-CODE</li>
+                        <li>每個位置生成獨立程式段 (N1, N2, N3...)</li>
+                    </ol>
+                </div>
+
+                <button class="btn-success" onclick="generateGCode()" style="margin-top: 25px; height: 60px; font-size: 18px;">
+                    ⚡ 生成 G-CODE
+                </button>
+            </div>
+
+            <!-- 右欄：輸出區 -->
+            <div class="panel">
+                <div class="panel-header">📤 G-CODE 輸出</div>
+
+                <textarea id="gcodeOutput" rows="20" readonly></textarea>
+
+                <button onclick="copyGCode()">📋 複製到剪貼簿</button>
+                <button class="btn-success" onclick="saveGCode()">💾 儲存為檔案</button>
+
+                <div id="outputMessage" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數：儲存銑削起始點座標
+        let millingCoordinates = [];
+        let workpieceLengthValue = 0;
+
+        // 從剪貼簿貼上
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('cadCoordinates').value = text;
+                showMessage('已從剪貼簿貼上座標數據', 'success');
+            } catch (err) {
+                showMessage('無法讀取剪貼簿，請手動貼上', 'error');
+            }
+        }
+
+        // 處理座標：JSON 解析並篩選 diameter=7.47
+        function processCoordinates() {
+            const cadInput = document.getElementById('cadCoordinates').value.trim();
+
+            if (!cadInput) {
+                showMessage('請先輸入銑削起始點座標數據', 'error');
+                return;
+            }
+
+            try {
+                // 解析 JSON
+                let parsedData = JSON.parse(cadInput);
+                let allCoordinates;
+
+                // 支援兩種格式
+                if (parsedData.coordinates && Array.isArray(parsedData.coordinates)) {
+                    allCoordinates = parsedData.coordinates;
+                } else if (Array.isArray(parsedData)) {
+                    allCoordinates = parsedData;
+                } else {
+                    throw new Error('座標格式不正確，請使用 {"coordinates": [...]} 或 [...] 格式');
+                }
+
+                // 重置陣列
+                millingCoordinates = [];
+
+                // 篩選 diameter=7.47 的座標
+                allCoordinates.forEach(coord => {
+                    if (coord.x === undefined || coord.y === undefined || coord.diameter === undefined) {
+                        throw new Error('每個座標必須包含 x, y, diameter 欄位');
+                    }
+
+                    const diameter = parseFloat(coord.diameter);
+
+                    // 只接受 diameter = 7.47 (允許微小誤差)
+                    if (Math.abs(diameter - 7.47) < 0.01) {
+                        millingCoordinates.push({
+                            x: parseFloat(coord.x),
+                            y: parseFloat(coord.y)
+                        });
+                    } else {
+                        console.warn(`跳過非銑削特徵點: diameter=${diameter}, 座標: (${coord.x}, ${coord.y})`);
+                    }
+                });
+
+                // 更新統計與預覽
+                updateStats();
+                updatePreview();
+                showMessage(`座標處理成功！找到 ${millingCoordinates.length} 個銑削位置 (diameter=7.47)`, 'success');
+
+            } catch (error) {
+                showMessage(`JSON 解析錯誤: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // 更新統計數字
+        function updateStats() {
+            document.getElementById('millingCount').textContent = millingCoordinates.length;
+        }
+
+        // 更新預覽
+        function updatePreview() {
+            const preview = document.getElementById('previewMilling');
+            if (millingCoordinates.length === 0) {
+                preview.innerHTML = '<div style="color: #999; font-style: italic;">無座標</div>';
+            } else {
+                preview.innerHTML = millingCoordinates.map((coord, index) =>
+                    `<div class="coordinate-item"><strong>N${index + 1}</strong>: X${coord.x.toFixed(2)} Y${coord.y.toFixed(2)}</div>`
+                ).join('');
+            }
+        }
+
+        // 生成單個位置的銑削路徑
+        function generateMillingPath(x, y, programNumber) {
+            let path = '';
+
+            path += `N${programNumber}\n`;
+            path += `(12mm mill)\n`;
+            path += `G0G90G54X${x.toFixed(2)}Y${y.toFixed(2)}.(!!)\u0020M3S1280\n`;
+            path += `G43H8Z70.\n`;
+            path += `M8\n`;
+            path += `M1\n`;
+            path += `G0G90Z-5.(安全高度)\n`;
+            path += `\n`;
+            path += `(!!)\n`;
+
+            // 第一層 Z-8.000
+            path += `G1G90Z-8.000 F200(切削深度: Z-8.000)\n`;
+            path += `(粗修開始)\n`;
+            path += `G1G91Y6.000 F200\n`;
+            path += `G1G91X-15.000\n`;
+            path += `G1G91Y78.000 F120\n`;
+            path += `G1G91X10.000 F200\n`;
+            path += `G1G91Y-84.000\n`;
+            path += `(粗修結束)\n`;
+            path += `(精修開始)\n`;
+            path += `G1G91X-16.000\n`;
+            path += `G1G91Y90.000\n`;
+            path += `G1G91X21.000\n`;
+            path += `G1G91Y-90.000\n`;
+            path += `(精修結束)\n`;
+
+            // 第二層 Z-15.500
+            path += `G1G90Z-15.500 (切削深度: Z-15.500)\n`;
+            path += `(粗修開始)\n`;
+            path += `G1G91Y6.000\n`;
+            path += `G1G91X-15.000\n`;
+            path += `G1G91Y78.000\n`;
+            path += `G1G91X10.000\n`;
+            path += `G1G91Y-84.000\n`;
+            path += `(粗修結束)\n`;
+            path += `(精修開始)\n`;
+            path += `G1G91X-16.000\n`;
+            path += `G1G91Y90.000\n`;
+            path += `G1G91X21.000\n`;
+            path += `G1G91Y-90.000\n`;
+            path += `(精修結束)\n`;
+            path += `\n`;
+            path += `G0G90Z100.M9\n`;
+            path += `M5\n`;
+            path += `\n\n`;
+
+            return path;
+        }
+
+        // 生成 G-CODE
+        function generateGCode() {
+            // 讀取品名
+            const productName = document.getElementById('productName').value.trim();
+
+            // 驗證工件長度
+            const lengthInput = document.getElementById('workpieceLength').value.trim();
+            if (!lengthInput) {
+                showMessage('請輸入工件長度 (L)', 'error');
+                return;
+            }
+
+            workpieceLengthValue = parseInt(lengthInput);
+            if (isNaN(workpieceLengthValue) || workpieceLengthValue <= 0) {
+                showMessage('工件長度必須是正整數', 'error');
+                return;
+            }
+
+            // 驗證座標
+            if (millingCoordinates.length === 0) {
+                showMessage('請先處理座標數據', 'error');
+                return;
+            }
+
+            let gcode = '';
+
+            // 標頭註解
+            if (productName) {
+                gcode += `(${productName})\n`;
+            } else {
+                gcode += `()\n`;
+            }
+
+            gcode += `(620-MI)\n`;
+            gcode += `(L=${workpieceLengthValue})\n`;
+            gcode += `(G54)\n`;
+            gcode += `(O--------)\n`;
+            gcode += `(----------)\n`;
+            gcode += `\n`;
+            gcode += `(12mm mill, T8 H8 S1280 F120)\n`;
+            gcode += `\n`;
+
+            // 為每個銑削位置生成程式段
+            millingCoordinates.forEach((coord, index) => {
+                gcode += generateMillingPath(coord.x, coord.y, index + 1);
+            });
+
+            // 結尾
+            gcode += `\n`;
+            gcode += `(~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)\n`;
+            gcode += `G0G90X-100.\n`;
+            gcode += `M30\n`;
+
+            // 輸出到畫面
+            document.getElementById('gcodeOutput').value = gcode;
+            showMessage(`G-CODE 生成成功！共 ${millingCoordinates.length} 個銑削位置`, 'success');
+        }
+
+        // 複製 G-CODE
+        async function copyGCode() {
+            const gcodeText = document.getElementById('gcodeOutput').value;
+
+            if (!gcodeText) {
+                showMessage('請先生成 G-CODE', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(gcodeText);
+                showMessage('已複製到剪貼簿！', 'success');
+            } catch (err) {
+                showMessage('複製失敗，請手動選取複製', 'error');
+            }
+        }
+
+        // 儲存 G-CODE
+        function saveGCode() {
+            const gcodeText = document.getElementById('gcodeOutput').value;
+
+            if (!gcodeText) {
+                showMessage('請先生成 G-CODE', 'error');
+                return;
+            }
+
+            const lengthInput = document.getElementById('workpieceLength').value.trim();
+            if (!lengthInput) {
+                showMessage('請輸入工件長度以命名檔案', 'error');
+                return;
+            }
+
+            const filename = `${lengthInput}-MI.txt`;
+
+            const blob = new Blob([gcodeText], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+
+            URL.revokeObjectURL(link.href);
+            showMessage(`已儲存為: ${filename}`, 'success');
+        }
+
+        // 顯示訊息
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('outputMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = type === 'success' ? 'success-text' : 'warning-text';
+
+            setTimeout(() => {
+                messageDiv.textContent = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

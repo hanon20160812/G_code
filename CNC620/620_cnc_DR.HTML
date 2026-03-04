@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>620專用G-CODE生成器 V1.1 (座標優化版)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); overflow: hidden; }
+        header { background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%); color: white; padding: 25px 30px; text-align: center; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; min-height: calc(100vh - 200px); }
+        .panel { padding: 25px; border-right: 1px solid #e0e0e0; }
+        .panel:last-child { border-right: none; }
+        .panel-header { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #3498db; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 14px; font-weight: bold; color: #34495e; margin-bottom: 8px; }
+        .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
+        textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-family: "Consolas", monospace; font-size: 13px; resize: vertical; }
+        button { padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 10px; }
+        button:hover { background: #2980b9; transform: translateY(-2px); }
+        .btn-success { background: #27ae60; }
+        .btn-warning { background: #f39c12; }
+        .preview-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; margin-top: 15px; }
+        .coordinate-list { max-height: 150px; overflow-y: auto; font-family: "Consolas", monospace; font-size: 12px; }
+        .stat-item { background: white; border: 2px solid #e0e0e0; border-radius: 6px; padding: 10px; text-align: center; margin-bottom: 10px; }
+        .param-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .param-table th { background: #34495e; color: white; padding: 8px; }
+        .param-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        #gcodeOutput { background: #2c3e50; color: #2ecc71; min-height: 500px; }
+        .sort-info { font-size: 11px; color: #e67e22; margin-top: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>620專用G-CODE生成器 V1.1</h1>
+            <p>已優化路徑排序：N1(自選) → N2(右至左) → N3(左至右)</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">📥 輸入區</div>
+                <div class="input-group">
+                    <label>品名 (下載檔名將以此命名)</label>
+                    <input type="text" id="productName" placeholder="例如: 620-10" value="">
+                </div>
+                <div class="input-group">
+                    <label>工件長度 (L)</label>
+                    <input type="number" id="workpieceLength" placeholder="例如: 5293">
+                </div>
+                <div class="input-group">
+                    <label>N1 (3.5mm) 加工方向</label>
+                    <select id="n1SortOrder">
+                        <option value="asc">X 昇序 (由左至右)</option>
+                        <option value="desc">X 降序 (由右至左)</option>
+                    </select>
+                    <p class="sort-info">※ N2 固定降序，N3 固定昇序以節省時間</p>
+                </div>
+                <div class="input-group">
+                    <label>CAD 座標 (JSON)</label>
+                    <textarea id="cadCoordinates" rows="10"></textarea>
+                </div>
+                <button onclick="pasteFromClipboard()">📋 貼上座標</button>
+                <button class="btn-warning" onclick="processCoordinates()">🔄 處理並預覽排序</button>
+                
+                <div class="preview-box">
+                    <h4>3.5mm (N1) 排序預覽</h4>
+                    <div class="coordinate-list" id="preview35"></div>
+                </div>
+                <div class="preview-box">
+                    <h4>4.2mm (N2/N3) 排序預覽</h4>
+                    <div class="coordinate-list" id="preview42"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">⚙️ 加工參數 (固定)</div>
+                <table class="param-table">
+                    <tr><th>段落</th><th>刀具</th><th>參數</th></tr>
+                    <tr><td>N1</td><td>T10 (3.5)</td><td>S3200 F150 / Z-7.</td></tr>
+                    <tr><td>N2</td><td>T11 (4.2)</td><td>S3000 F100 / Z-9.</td></tr>
+                    <tr><td>N3</td><td>T12 (M5)</td><td>S200 F0.8 / Z-10.</td></tr>
+                </table>
+                <button class="btn-success" onclick="generateGCode()" style="margin-top: 30px; height: 60px; font-size: 18px;">⚡ 生成 G-CODE</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">📤 G-CODE 輸出</div>
+                <textarea id="gcodeOutput" readonly></textarea>
+                <button onclick="copyGCode()">📋 複製到剪貼簿</button>
+                <button class="btn-success" onclick="saveGCode()">💾 儲存為檔案 (T+品名.txt)</button>
+                <div id="outputMessage" style="margin-top: 10px; text-align: center;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let coordinates35 = [];
+        let coordinates42 = [];
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('cadCoordinates').value = text;
+            } catch (err) { alert('無法讀取剪貼簿'); }
+        }
+
+        // 通用排序函數：先排 X，若 X 相同則 Y 由大至小
+        function sortLogic(data, xOrder) {
+            return [...data].sort((a, b) => {
+                if (a.x !== b.x) {
+                    return xOrder === 'asc' ? a.x - b.x : b.x - a.x;
+                }
+                // Y 由大到小 (例如 -10 > -31 > -52)
+                return b.y - a.y;
+            });
+        }
+
+        function processCoordinates() {
+            const cadInput = document.getElementById('cadCoordinates').value.trim();
+            if (!cadInput) return alert('請輸入資料');
+
+            try {
+                let parsedData = JSON.parse(cadInput);
+                let all = parsedData.coordinates || (Array.isArray(parsedData) ? parsedData : []);
+                
+                coordinates35 = [];
+                coordinates42 = [];
+
+                all.forEach(coord => {
+                    const diameter = parseFloat(coord.diameter);
+                    const obj = { x: parseFloat(coord.x), y: parseFloat(coord.y) };
+                    if (diameter === 3 || diameter === 3.5) coordinates35.push(obj);
+                    else if (diameter === 4.2) coordinates42.push(obj);
+                });
+
+                updatePreviews();
+                alert('處理完成，請查看預覽清單');
+            } catch (e) { alert('JSON 格式錯誤'); }
+        }
+
+        function updatePreviews() {
+            const n1Order = document.getElementById('n1SortOrder').value;
+            const sorted35 = sortLogic(coordinates35, n1Order);
+            const sorted42 = sortLogic(coordinates42, 'desc'); // N2 預覽顯示降序
+
+            document.getElementById('preview35').innerHTML = sorted35.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
+            document.getElementById('preview42').innerHTML = sorted42.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
+        }
+
+        function generateGCode() {
+            const productName = document.getElementById('productName').value.trim();
+            const L = document.getElementById('workpieceLength').value;
+            const n1Order = document.getElementById('n1SortOrder').value;
+
+            if (coordinates35.length === 0 && coordinates42.length === 0) return alert('無座標資料');
+
+            // 執行各段落專屬排序
+            const listN1 = sortLogic(coordinates35, n1Order);
+            const listN2 = sortLogic(coordinates42, 'desc'); // N2 降序
+            const listN3 = sortLogic(coordinates42, 'asc');  // N3 昇序回到頭端
+
+            let g = `(${productName})\n(DR)\n(L=${L})\n(G54)\n(座標左上)\n\n`;
+
+            if (listN1.length > 0) {
+                g += `N1\nT10(3.5mm dr)\nG0G90G54X${listN1[0].x.toFixed(2)} Y${listN1[0].y.toFixed(2)} M3S3200\nG43H10Z100.\nZ60.M8\nG98G81Z-7.R5.F150\n`;
+                for (let i = 1; i < listN1.length; i++) g += `X${listN1[i].x.toFixed(2)} Y${listN1[i].y.toFixed(2)}\n`;
+                g += `G0G90Z100.M9\nM5\n\n`;
+            }
+
+            if (listN2.length > 0) {
+                g += `N2\nT11(4.2mm dr)\nG0G90G54X${listN2[0].x.toFixed(2)} Y${listN2[0].y.toFixed(2)} M3S3000\nG43H11Z100.\nZ95.M8\nG98G81Z-9.R5.F100\n`;
+                for (let i = 1; i < listN2.length; i++) g += `X${listN2[i].x.toFixed(2)} Y${listN2[i].y.toFixed(2)}\n`;
+                g += `G0G90Z95.M9\nM5\n\n`;
+
+                g += `N3\nT12(M5 TAP)\nG0G90G54X${listN3[0].x.toFixed(2)} Y${listN3[0].y.toFixed(2)} M3S200\nG43H12Z100.\nZ95.M8\nM29\nG95G84Z-10.R5.F0.8\n`;
+                for (let i = 1; i < listN3.length; i++) g += `X${listN3[i].x.toFixed(2)} Y${listN3[i].y.toFixed(2)}\n`;
+                g += `G0G90Z150.M9\nM5\n\n`;
+            }
+
+            g += `G0G90X-150.\nT10\nM30`;
+            document.getElementById('gcodeOutput').value = g;
+        }
+
+        function copyGCode() {
+            const out = document.getElementById('gcodeOutput');
+            out.select();
+            document.execCommand('copy');
+            alert('已複製');
+        }
+
+        function saveGCode() {
+            const gcode = document.getElementById('gcodeOutput').value;
+            const productName = document.getElementById('productName').value.trim() || "TEMP";
+            if (!gcode) return alert('請先生成 G-CODE');
+
+            const filename = `T${productName}.txt`;
+            const blob = new Blob([gcode], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+    </script>
+</body>
+</html>
