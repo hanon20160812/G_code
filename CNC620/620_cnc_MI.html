@@ -313,6 +313,12 @@
                 <div class="panel-header">📥 輸入區</div>
 
                 <div class="input-group">
+                    <label for="productNameParser">品名辨識 (自動解析)</label>
+                    <input type="text" id="productNameParser" placeholder="例如: 6190710L    L=3774.32" oninput="parseProductInfo()">
+                    <p class="warning-text" style="font-size: 11px; margin-top: 5px;">※ 輸入後自動解析品名和長度</p>
+                </div>
+
+                <div class="input-group">
                     <label for="productName">品名</label>
                     <input type="text" id="productName" placeholder="例如: 6F-01, 8F-02" value="">
                 </div>
@@ -324,7 +330,7 @@
 
                 <div class="input-group">
                     <label for="cadCoordinates">銑削起始點座標 (JSON 格式) <span class="info-badge">diameter=7.47</span></label>
-                    <textarea id="cadCoordinates" rows="10" placeholder='{"coordinates":[
+                    <textarea id="cadCoordinates" rows="10" onpaste="handlePaste()" placeholder='{"coordinates":[
   {"x": 942.5, "y": -78, "diameter": 7.47},
   {"x": 1500, "y": -78, "diameter": 7.47},
   {"x": 2100, "y": -78, "diameter": 7.47}
@@ -333,6 +339,7 @@
 
                 <button onclick="pasteFromClipboard()">📋 從剪貼簿貼上</button>
                 <button class="btn-warning" onclick="processCoordinates()">🔄 處理座標</button>
+                <button class="btn-warning" onclick="clearAll()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">🗑️ 一鍵清空</button>
 
                 <div class="stats-box">
                     <div class="stat-item">
@@ -433,6 +440,31 @@
         // 全域變數：儲存銑削起始點座標
         let millingCoordinates = [];
         let workpieceLengthValue = 0;
+
+        // 處理貼上事件
+        function handlePaste() {
+            setTimeout(function() {
+                processCoordinates();
+            }, 100);
+        }
+
+        // 解析品名和長度
+        function parseProductInfo() {
+            const input = document.getElementById('productNameParser').value.trim();
+            if (!input) return;
+
+            // 格式: "6190710L    L=3774.32"
+            // 使用正則表達式解析
+            const match = input.match(/^(.+?)\s+L\s*=\s*([0-9.]+)/i);
+
+            if (match) {
+                const productName = match[1].trim();
+                const length = match[2].trim();
+
+                document.getElementById('productName').value = productName;
+                document.getElementById('workpieceLength').value = length;
+            }
+        }
 
         // 從剪貼簿貼上
         async function pasteFromClipboard() {
@@ -626,7 +658,14 @@
 
             // 輸出到畫面
             document.getElementById('gcodeOutput').value = gcode;
-            showMessage(`G-CODE 生成成功！共 ${millingCoordinates.length} 個銑削位置`, 'success');
+
+            // 自動儲存檔案
+            saveGCode();
+
+            // 延遲後自動清空
+            setTimeout(function() {
+                clearAll();
+            }, 500);
         }
 
         // 複製 G-CODE
@@ -655,13 +694,13 @@
                 return;
             }
 
-            const lengthInput = document.getElementById('workpieceLength').value.trim();
-            if (!lengthInput) {
-                showMessage('請輸入工件長度以命名檔案', 'error');
+            const productName = document.getElementById('productName').value.trim();
+            if (!productName) {
+                showMessage('請輸入品名以命名檔案', 'error');
                 return;
             }
 
-            const filename = `${lengthInput}-MI.txt`;
+            const filename = `${productName}-MI.txt`;
 
             const blob = new Blob([gcodeText], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');
@@ -670,7 +709,6 @@
             link.click();
 
             URL.revokeObjectURL(link.href);
-            showMessage(`已儲存為: ${filename}`, 'success');
         }
 
         // 顯示訊息
@@ -682,6 +720,18 @@
             setTimeout(() => {
                 messageDiv.textContent = '';
             }, 3000);
+        }
+
+        // 一鍵清空
+        function clearAll() {
+            document.getElementById('productNameParser').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('workpieceLength').value = '';
+            document.getElementById('cadCoordinates').value = '';
+            document.getElementById('gcodeOutput').value = '';
+            document.getElementById('previewMilling').innerHTML = '<div style="color: #999; font-style: italic;">無座標</div>';
+            document.getElementById('millingCount').textContent = '0';
+            millingCoordinates = [];
         }
     </script>
 </body>
