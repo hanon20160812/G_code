@@ -42,12 +42,22 @@
             <div class="panel">
                 <div class="panel-header">📥 輸入區</div>
                 <div class="input-group">
+                    <label>品名辨識 (自動解析)</label>
+                    <input type="text" id="productNameParser" placeholder="例如: 6190710L    L=3774.32" oninput="parseProductInfo()">
+                    <p class="sort-info">※ 輸入後自動解析品名和長度</p>
+                </div>
+                <div class="input-group">
                     <label>品名 (下載檔名將以此命名)</label>
                     <input type="text" id="productName" placeholder="例如: 620-10" value="">
                 </div>
                 <div class="input-group">
                     <label>工件長度 (L)</label>
                     <input type="number" id="workpieceLength" placeholder="例如: 5293">
+                </div>
+                <div class="input-group">
+                    <label>CAD 座標 (JSON)</label>
+                    <div id="cadMessage" style="color: red; font-size: 12px; margin-bottom: 5px; display: none;"></div>
+                    <textarea id="cadCoordinates" rows="10" onpaste="handlePaste()"></textarea>
                 </div>
                 <div class="input-group">
                     <label>N1 (3.5mm) 加工方向</label>
@@ -57,21 +67,10 @@
                     </select>
                     <p class="sort-info">※ N2 固定降序，N3 固定昇序以節省時間</p>
                 </div>
-                <div class="input-group">
-                    <label>CAD 座標 (JSON)</label>
-                    <textarea id="cadCoordinates" rows="10"></textarea>
-                </div>
                 <button onclick="pasteFromClipboard()">📋 貼上座標</button>
                 <button class="btn-warning" onclick="processCoordinates()">🔄 處理並預覽排序</button>
+                <button class="btn-warning" onclick="clearAll()" style="background: #e74c3c;">🗑️ 一鍵清空</button>
                 
-                <div class="preview-box">
-                    <h4>3.5mm (N1) 排序預覽</h4>
-                    <div class="coordinate-list" id="preview35"></div>
-                </div>
-                <div class="preview-box">
-                    <h4>4.2mm (N2/N3) 排序預覽</h4>
-                    <div class="coordinate-list" id="preview42"></div>
-                </div>
             </div>
 
             <div class="panel">
@@ -82,6 +81,16 @@
                     <tr><td>N2</td><td>T11 (4.2)</td><td>S3000 F100 / Z-9.</td></tr>
                     <tr><td>N3</td><td>T12 (M5)</td><td>S200 F0.8 / Z-10.</td></tr>
                 </table>
+                <div style="margin-top: 30px;">
+                    <div class="preview-box">
+                        <h4>3.5mm (N1) 排序預覽</h4>
+                        <div class="coordinate-list" id="preview35"></div>
+                    </div>
+                    <div class="preview-box" style="margin-top: 15px;">
+                        <h4>4.2mm (N2/N3) 排序預覽</h4>
+                        <div class="coordinate-list" id="preview42"></div>
+                    </div>
+                </div>
                 <button class="btn-success" onclick="generateGCode()" style="margin-top: 30px; height: 60px; font-size: 18px;">⚡ 生成 G-CODE</button>
             </div>
 
@@ -99,11 +108,42 @@
         let coordinates35 = [];
         let coordinates42 = [];
 
+        function handlePaste() {
+            setTimeout(function() {
+                processCoordinates();
+            }, 100);
+        }
+
+        function parseProductInfo() {
+            const input = document.getElementById('productNameParser').value.trim();
+            if (!input) return;
+
+            // 格式: "6190710L    L=3774.32"
+            // 使用正則表達式解析
+            const match = input.match(/^(.+?)\s+L\s*=\s*([0-9.]+)/i);
+
+            if (match) {
+                const productName = match[1].trim();
+                const length = match[2].trim();
+
+                document.getElementById('productName').value = productName;
+                document.getElementById('workpieceLength').value = length;
+            }
+        }
+
+        function showCadMessage(msg) {
+            const el = document.getElementById('cadMessage');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
         async function pasteFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
                 document.getElementById('cadCoordinates').value = text;
-            } catch (err) { alert('無法讀取剪貼簿'); }
+                processCoordinates();
+            } catch (err) { showCadMessage('無法讀取剪貼簿'); }
         }
 
         // 通用排序函數：先排 X，若 X 相同則 Y 由大至小
@@ -119,12 +159,12 @@
 
         function processCoordinates() {
             const cadInput = document.getElementById('cadCoordinates').value.trim();
-            if (!cadInput) return alert('請輸入資料');
+            if (!cadInput) return showCadMessage('請輸入資料');
 
             try {
                 let parsedData = JSON.parse(cadInput);
                 let all = parsedData.coordinates || (Array.isArray(parsedData) ? parsedData : []);
-                
+
                 coordinates35 = [];
                 coordinates42 = [];
 
@@ -136,8 +176,8 @@
                 });
 
                 updatePreviews();
-                alert('處理完成，請查看預覽清單');
-            } catch (e) { alert('JSON 格式錯誤'); }
+                showCadMessage('處理完成，請查看預覽清單');
+            } catch (e) { showCadMessage('JSON 格式錯誤'); }
         }
 
         function updatePreviews() {
@@ -181,6 +221,14 @@
 
             g += `G0G90X-150.\nT10\nM30`;
             document.getElementById('gcodeOutput').value = g;
+
+            // 自動儲存檔案
+            saveGCode();
+
+            // 延遲後自動清空
+            setTimeout(function() {
+                clearAll();
+            }, 500);
         }
 
         function copyGCode() {
@@ -195,12 +243,24 @@
             const productName = document.getElementById('productName').value.trim() || "TEMP";
             if (!gcode) return alert('請先生成 G-CODE');
 
-            const filename = `T${productName}.txt`;
+            const filename = `${productName}.txt`;
             const blob = new Blob([gcode], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = filename;
             link.click();
+        }
+
+        function clearAll() {
+            document.getElementById('productNameParser').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('workpieceLength').value = '';
+            document.getElementById('cadCoordinates').value = '';
+            document.getElementById('gcodeOutput').value = '';
+            document.getElementById('preview35').innerHTML = '';
+            document.getElementById('preview42').innerHTML = '';
+            coordinates35 = [];
+            coordinates42 = [];
         }
     </script>
 </body>
