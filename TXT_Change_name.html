@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TXT 檔名修改工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --panel: #171b26;
+    --panel2: #1e2333;
+    --border: #2a3050;
+    --accent: #4f8eff;
+    --accent2: #00d4aa;
+    --danger: #ff5c5c;
+    --warn: #ffb347;
+    --text: #e8eaf0;
+    --text2: #8892b0;
+    --text3: #4a5578;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 14px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  header span { color: var(--text2); font-size: 12px; }
+
+  /* ── Tab bar ── */
+  .tabs {
+    display: flex;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    user-select: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Main layout ── */
+  main { flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── Drop zone ── */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--panel);
+    position: relative;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: #171b26ee;
+  }
+  .dropzone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .dropzone .dz-icon { font-size: 28px; margin-bottom: 6px; }
+  .dropzone p { color: var(--text2); font-size: 13px; }
+  .dropzone p strong { color: var(--accent); }
+  .dropzone p.hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ── File count badge ── */
+  .file-count {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 8px;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    flex: 1;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--panel2);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text2);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #1e2333; }
+  tbody td { padding: 6px 10px; vertical-align: middle; }
+  tbody td:first-child { font-family: var(--mono); font-size: 12px; color: var(--text2); width: 32px; text-align: center; }
+
+  /* original name */
+  td.orig { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+  /* editable new name */
+  td.new-name input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 3px 6px;
+    width: 100%;
+    transition: border-color .15s;
+    outline: none;
+  }
+  td.new-name input:focus {
+    border-color: var(--accent);
+    background: #0d1220;
+  }
+  td.new-name input.conflict { border-color: var(--danger); color: var(--danger); }
+  td.new-name input.same { color: var(--text3); }
+
+  /* status */
+  td.status { width: 70px; text-align: center; font-size: 11px; font-family: var(--mono); }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .badge.ok { background: #00d4aa22; color: var(--accent2); }
+  .badge.same { background: #ffffff10; color: var(--text3); }
+  .badge.dup { background: #ff5c5c22; color: var(--danger); }
+  .badge.empty { background: #ffb34722; color: var(--warn); }
+
+  /* ── Rule panel (Mode B) ── */
+  .rule-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .rule-group { display: flex; flex-direction: column; gap: 4px; }
+  .rule-group label { font-size: 11px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .rule-group input, .rule-group select {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 9px;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color .15s;
+    min-width: 120px;
+  }
+  .rule-group input:focus, .rule-group select:focus { border-color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .03em;
+  }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #6fa5ff; }
+  .btn-success { background: var(--accent2); color: #0f1117; }
+  .btn-success:hover:not(:disabled) { background: #00f0c0; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #ff7979; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--text2); }
+
+  /* ── Status bar ── */
+  .statusbar {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 6px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    display: flex;
+    gap: 16px;
+  }
+  .statusbar .ok { color: var(--accent2); }
+  .statusbar .dup { color: var(--danger); }
+  .statusbar .warn { color: var(--warn); }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 40px; color: var(--text3); font-family: var(--mono); font-size: 13px; }
+
+  /* ── Log ── */
+  .log-box {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 10px 12px;
+    max-height: 140px;
+    overflow-y: auto;
+    line-height: 1.7;
+    display: none;
+  }
+  .log-box .log-ok { color: var(--accent2); }
+  .log-box .log-err { color: var(--danger); }
+  .log-box .log-info { color: var(--text2); }
+
+  /* mode panel */
+  .mode-panel { display: none; }
+  .mode-panel.active { display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .sep { color: var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>▸ TXT 檔名修改工具</h1>
+  <span>支援拖曳資料夾 / 單一檔案</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="manual">✎ 手動編輯表格</div>
+  <div class="tab" data-tab="rule">⚡ 規則批次修改</div>
+</div>
+
+<main>
+
+  <!-- ── Drop zone ── -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".txt" multiple>
+    <div class="dz-icon">📂</div>
+    <p><strong>點擊選檔</strong>或拖曳 <strong>.txt 檔案 / 資料夾</strong>到這裡</p>
+    <p class="hint">支援多選檔案 · 拖曳整個資料夾也可以</p>
+  </div>
+
+  <!-- ── MODE A: 手動表格 ── -->
+  <div class="mode-panel active" id="panel-manual">
+    <div class="btn-row">
+      <button class="btn-primary" onclick="applyRenameManual()" id="btn-apply-manual" disabled>✔ 執行重新命名</button>
+      <button class="btn-ghost" onclick="clearAll()">✕ 清除全部</button>
+      <span style="color:var(--text3);font-size:11px;font-family:var(--mono)">Tab / Enter 快速跳下一格</span>
+    </div>
+    <div class="table-wrap" id="table-wrap">
+      <div class="empty" id="empty-msg">尚未載入任何 .txt 檔案</div>
+      <table id="file-table" style="display:none">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>原始檔名</th>
+            <th>新檔名（不含副檔名）</th>
+            <th>狀態</th>
+          </tr>
+        </thead>
+        <tbody id="file-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── MODE B: 規則批次 ── -->
+  <div class="mode-panel" id="panel-rule">
+    <div class="rule-panel">
+      <div class="rule-group">
+        <label>操作</label>
+        <select id="rule-op">
+          <option value="prefix">加前綴</option>
+          <option value="suffix">加後綴</option>
+          <option value="replace">取代文字</option>
+          <option value="remove">刪除文字</option>
+          <option value="number">加流水號（保留原檔名）</option>
+          <option value="serial">純流水號（整個取代）</option>
+          <option value="case-upper">轉大寫</option>
+          <option value="case-lower">轉小寫</option>
+        </select>
+      </div>
+      <div class="rule-group" id="rg-find" style="display:none">
+        <label>搜尋</label>
+        <input type="text" id="rule-find" placeholder="要被取代/刪除的字">
+      </div>
+      <div class="rule-group" id="rg-text">
+        <label id="rg-text-label">文字</label>
+        <input type="text" id="rule-text" placeholder="輸入文字">
+      </div>
+      <div class="rule-group" id="rg-num" style="display:none">
+        <label>起始號碼</label>
+        <input type="number" id="rule-num-start" value="1" min="1" style="width:80px">
+      </div>
+      <div class="rule-group" id="rg-pad" style="display:none">
+        <label>補零位數</label>
+        <input type="number" id="rule-num-pad" value="3" min="1" max="6" style="width:80px">
+      </div>
+      <div class="rule-group" id="rg-pos" style="display:none">
+        <label>位置</label>
+        <select id="rule-num-pos">
+          <option value="prefix">加在前面</option>
+          <option value="suffix">加在後面</option>
+        </select>
+      </div>
+      <div class="rule-group" id="rg-prefix" style="display:none">
+        <label>前置文字（選填）</label>
+        <input type="text" id="rule-serial-prefix" placeholder="例：ABC_">
+      </div>
+      <div class="rule-group">
+        <label>　</label>
+        <button class="btn-primary" onclick="applyRule()">⚡ 套用規則</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-success" onclick="applyRenameManual()" id="btn-apply-rule" disabled>✔ 執行重新命名</button>
+      <button class="btn-ghost" onclick="resetNewNames()">↺ 還原預覽</button>
+      <button class="btn-ghost" onclick="clearAll()">✕ 清除全部</button>
+    </div>
+
+    <div class="table-wrap" id="table-wrap-b">
+      <div class="empty" id="empty-msg-b">尚未載入任何 .txt 檔案</div>
+      <table id="file-table-b" style="display:none">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>原始檔名</th>
+            <th>預覽新檔名</th>
+            <th>狀態</th>
+          </tr>
+        </thead>
+        <tbody id="file-tbody-b"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Log ── -->
+  <div class="log-box" id="log-box"></div>
+
+</main>
+
+<div class="statusbar" id="statusbar">
+  <span id="sb-total">檔案：0</span>
+  <span class="sep">|</span>
+  <span class="ok" id="sb-ok">可改：0</span>
+  <span class="sep">|</span>
+  <span class="dup" id="sb-dup">衝突：0</span>
+  <span class="sep">|</span>
+  <span class="warn" id="sb-empty">未填：0</span>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// State
+// ════════════════════════════════════════
+let files = []; // { name, baseName, handle(if fs api), newName }
+let activeTab = 'manual';
+
+// ════════════════════════════════════════
+// Tab switching
+// ════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    activeTab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + activeTab).classList.add('active');
+    refreshTable();
+  });
+});
+
+// ════════════════════════════════════════
+// File input / drag-drop
+// ════════════════════════════════════════
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('fileInput');
+
+fi.addEventListener('change', e => handleFileList(e.target.files));
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', async e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  const items = e.dataTransfer.items;
+  const collected = [];
+  for (const item of items) {
+    if (item.kind !== 'file') continue;
+    const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+    if (entry && entry.isDirectory) {
+      await readDirEntry(entry, collected);
+    } else {
+      const f = item.getAsFile();
+      if (f && f.name.toLowerCase().endsWith('.txt')) collected.push(f);
+    }
+  }
+  if (collected.length) addFiles(collected);
+});
+
+async function readDirEntry(entry, out) {
+  return new Promise(resolve => {
+    const reader = entry.createReader();
+    const readAll = () => reader.readEntries(async entries => {
+      if (!entries.length) { resolve(); return; }
+      for (const e of entries) {
+        if (e.isFile && e.name.toLowerCase().endsWith('.txt')) {
+          await new Promise(r => e.file(f => { out.push(f); r(); }));
+        } else if (e.isDirectory) {
+          await readDirEntry(e, out);
+        }
+      }
+      readAll();
+    });
+    readAll();
+  });
+}
+
+function handleFileList(fileList) {
+  const arr = [];
+  for (const f of fileList) {
+    if (f.name.toLowerCase().endsWith('.txt')) arr.push(f);
+  }
+  addFiles(arr);
+}
+
+function addFiles(newFiles) {
+  const existingNames = new Set(files.map(f => f.name));
+  for (const f of newFiles) {
+    if (!existingNames.has(f.name)) {
+      const baseName = f.name.replace(/\.txt$/i, '');
+      files.push({ name: f.name, baseName, newName: baseName, file: f });
+      existingNames.add(f.name);
+    }
+  }
+  files.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+  refreshTable();
+  updateStatus();
+}
+
+// ════════════════════════════════════════
+// Table rendering
+// ════════════════════════════════════════
+function refreshTable() {
+  const isManual = activeTab === 'manual';
+  const tbody = document.getElementById(isManual ? 'file-tbody' : 'file-tbody-b');
+  const table = document.getElementById(isManual ? 'file-table' : 'file-table-b');
+  const emptyMsg = document.getElementById(isManual ? 'empty-msg' : 'empty-msg-b');
+
+  tbody.innerHTML = '';
+
+  if (!files.length) {
+    table.style.display = 'none';
+    emptyMsg.style.display = '';
+    return;
+  }
+  table.style.display = 'table';
+  emptyMsg.style.display = 'none';
+
+  files.forEach((f, i) => {
+    const tr = document.createElement('tr');
+    const status = getStatus(i);
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="orig">${escHtml(f.baseName)}</td>
+      <td class="new-name"><input
+        type="text"
+        data-idx="${i}"
+        value="${escHtml(f.newName)}"
+        class="${status === 'dup' ? 'conflict' : status === 'same' ? 'same' : ''}"
+        ${activeTab === 'rule' ? '' : ''}
+        placeholder="新檔名"
+      ></td>
+      <td class="status">${badgeHtml(status)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    const input = tr.querySelector('input');
+    input.addEventListener('input', e => {
+      files[i].newName = e.target.value.trim();
+      refreshStatus();
+    });
+    // Tab / Enter navigation
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        const next = tbody.querySelector(`input[data-idx="${i + 1}"]`);
+        if (next) next.focus();
+      }
+    });
+  });
+
+  updateStatus();
+}
+
+function refreshStatus() {
+  // update badges and input classes without full re-render
+  const isManual = activeTab === 'manual';
+  const tbody = document.getElementById(isManual ? 'file-tbody' : 'file-tbody-b');
+  files.forEach((_, i) => {
+    const row = tbody.rows[i];
+    if (!row) return;
+    const input = row.querySelector('input');
+    const statusCell = row.cells[3];
+    const s = getStatus(i);
+    input.className = s === 'dup' ? 'conflict' : s === 'same' ? 'same' : '';
+    statusCell.innerHTML = badgeHtml(s);
+  });
+  updateStatus();
+}
+
+function getStatus(i) {
+  const f = files[i];
+  if (!f.newName || !f.newName.trim()) return 'empty';
+  if (f.newName.trim() === f.baseName) return 'same';
+  // check duplicates among newNames
+  const others = files.filter((_, j) => j !== i).map(x => x.newName.trim().toLowerCase());
+  if (others.includes(f.newName.trim().toLowerCase())) return 'dup';
+  return 'ok';
+}
+
+function badgeHtml(s) {
+  const map = { ok: ['ok', '✓ 可改'], same: ['same', '－ 相同'], dup: ['dup', '✕ 衝突'], empty: ['empty', '? 未填'] };
+  const [cls, label] = map[s] || ['same', ''];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function updateStatus() {
+  const total = files.length;
+  let ok = 0, dup = 0, empty = 0;
+  files.forEach((_, i) => {
+    const s = getStatus(i);
+    if (s === 'ok') ok++;
+    if (s === 'dup') dup++;
+    if (s === 'empty') empty++;
+  });
+  document.getElementById('sb-total').textContent = `檔案：${total}`;
+  document.getElementById('sb-ok').textContent = `可改：${ok}`;
+  document.getElementById('sb-dup').textContent = `衝突：${dup}`;
+  document.getElementById('sb-empty').textContent = `未填：${empty}`;
+
+  const canApply = ok > 0 && dup === 0;
+  const btnManual = document.getElementById('btn-apply-manual');
+  const btnRule = document.getElementById('btn-apply-rule');
+  if (btnManual) btnManual.disabled = !canApply;
+  if (btnRule) btnRule.disabled = !canApply;
+}
+
+// ════════════════════════════════════════
+// Rule engine
+// ════════════════════════════════════════
+const ruleOp = document.getElementById('rule-op');
+ruleOp.addEventListener('change', updateRuleUI);
+updateRuleUI();
+
+function updateRuleUI() {
+  const op = ruleOp.value;
+  const show = id => document.getElementById(id).style.display = '';
+  const hide = id => document.getElementById(id).style.display = 'none';
+
+  hide('rg-find'); hide('rg-text'); hide('rg-num'); hide('rg-pad'); hide('rg-pos'); hide('rg-prefix');
+
+  if (op === 'prefix') { show('rg-text'); document.getElementById('rg-text-label').textContent = '前綴文字'; }
+  else if (op === 'suffix') { show('rg-text'); document.getElementById('rg-text-label').textContent = '後綴文字'; }
+  else if (op === 'replace') { show('rg-find'); show('rg-text'); document.getElementById('rg-text-label').textContent = '取代成'; }
+  else if (op === 'remove') { show('rg-find'); document.getElementById('rg-text-label').textContent = ''; }
+  else if (op === 'number') { show('rg-num'); show('rg-pad'); show('rg-pos'); }
+  else if (op === 'serial') { show('rg-num'); show('rg-pad'); show('rg-prefix'); }
+  // case ops: no extra fields
+}
+
+function applyRule() {
+  if (!files.length) return;
+  const op = ruleOp.value;
+  const text = document.getElementById('rule-text').value;
+  const find = document.getElementById('rule-find').value;
+  const numStart = parseInt(document.getElementById('rule-num-start').value) || 1;
+  const numPad = parseInt(document.getElementById('rule-num-pad').value) || 3;
+  const numPos = document.getElementById('rule-num-pos').value;
+
+  const serialPrefix = document.getElementById('rule-serial-prefix').value;
+
+  files.forEach((f, i) => {
+    let n = f.baseName;
+    if (op === 'prefix') n = text + n;
+    else if (op === 'suffix') n = n + text;
+    else if (op === 'replace' && find) n = n.split(find).join(text);
+    else if (op === 'remove' && find) n = n.split(find).join('');
+    else if (op === 'number') {
+      const num = String(numStart + i).padStart(numPad, '0');
+      n = numPos === 'prefix' ? num + '_' + n : n + '_' + num;
+    }
+    else if (op === 'serial') {
+      const num = String(numStart + i).padStart(numPad, '0');
+      n = serialPrefix + num;
+    }
+    else if (op === 'case-upper') n = n.toUpperCase();
+    else if (op === 'case-lower') n = n.toLowerCase();
+    f.newName = n;
+  });
+  refreshTable();
+}
+
+function resetNewNames() {
+  files.forEach(f => f.newName = f.baseName);
+  refreshTable();
+}
+
+// ════════════════════════════════════════
+// Execute rename (download via <a>)
+// ════════════════════════════════════════
+async function applyRenameManual() {
+  const toRename = files.filter((_, i) => getStatus(i) === 'ok');
+  if (!toRename.length) return;
+
+  const log = document.getElementById('log-box');
+  log.innerHTML = '';
+  log.style.display = 'block';
+
+  let success = 0;
+  for (const f of toRename) {
+    try {
+      // Read original file content, download as new name
+      const content = await f.file.text();
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.newName + '.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      log.innerHTML += `<div class="log-ok">✓ ${escHtml(f.name)} → ${escHtml(f.newName)}.txt</div>`;
+      success++;
+      // small delay to avoid browser blocking multiple downloads
+      await sleep(80);
+    } catch(e) {
+      log.innerHTML += `<div class="log-err">✕ ${escHtml(f.name)}：${e.message}</div>`;
+    }
+  }
+  log.innerHTML += `<div class="log-info">─ 完成：${success} 個檔案已下載，請刪除原始檔案後替換</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+// ════════════════════════════════════════
+// Helpers
+// ════════════════════════════════════════
+function clearAll() {
+  files = [];
+  document.getElementById('file-tbody').innerHTML = '';
+  document.getElementById('file-table').style.display = 'none';
+  document.getElementById('empty-msg').style.display = '';
+  document.getElementById('file-tbody-b').innerHTML = '';
+  document.getElementById('file-table-b').style.display = 'none';
+  document.getElementById('empty-msg-b').style.display = '';
+  document.getElementById('log-box').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  updateStatus();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
