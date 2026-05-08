@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>編號區間整理工具 V2.2</title>
+<!--
+================================================================
+編號區間整理工具 V2.2
+================================================================
+更新日誌：
+  V2.2：
+    - 按鈕位置調整：載入範例/一鍵清空 移至「輸入編號清單」標題列右側
+    - 手動複製按鈕 + 已自動複製徽章 移至「整理結果」標題列右側
+    - 新增 .btn-sm 小尺寸按鈕樣式
+    - 新增 .header-btns 容器（margin-left:auto 推到最右）
+    - 移除原本下方的 btn-row（節省垂直空間）
+  V2.1：
+    1. 清空按鈕改為紅色（警示色）
+    2. 全視窗高度佈局（100vh），任何裝置都不需要捲動
+    3. 內容區域 overflow 自適應（內部 textarea / 結果區可獨立捲動）
+    4. 手機直立模式採用上下分欄 + 各 50vh 高度
+  V2.0：
+    1. 單一綠色主題
+    2. 即時整理 + 自動複製
+    3. 左右兩欄佈局
+
+AI 接手指引（重要）：
+  Q1：保持綠色主題不變
+  Q2：保持 100vh 全視窗佈局，不要讓主介面出現整頁捲動
+  Q3：清空按鈕保持紅色（btn-danger）
+  Q4：保持 input 事件即時整理 + 即時複製
+  Q5：特殊編號（含字母）必須智慧插入區間中間
+  Q6：驗算邏輯必須保留
+================================================================
+-->
+<style>
+  :root {
+    --c-main: #5CB85C;
+    --c-dark: #1B5E20;
+    --c-light: #C8E6C9;
+    --c-cream: #F1F8E9;
+    --c-gold: #FFC107;
+    --c-mid: #388E3C;
+    --c-danger: #E53935;
+    --c-danger-dark: #B71C1C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    overflow: hidden; /* 防止主視窗滾動 */
+  }
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+    background: var(--c-cream);
+    color: #333;
+    padding: 8px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .container {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(27, 94, 32, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* 關鍵：允許 flex 子項收縮 */
+  }
+  .header {
+    background: linear-gradient(135deg, var(--c-main), var(--c-dark));
+    color: #fff;
+    padding: 10px 20px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 18px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .header p {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+  .header .auto-badge {
+    display: inline-block;
+    background: var(--c-gold);
+    color: var(--c-dark);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* 左右兩欄佈局 */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .pane {
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .pane-left {
+    border-right: 2px solid var(--c-light);
+    background: #fafafa;
+  }
+  .pane-right {
+    background: #fff;
+    overflow-y: auto; /* 右側若內容多，獨立捲動 */
+  }
+
+  .label {
+    font-weight: bold;
+    color: var(--c-dark);
+    margin-bottom: 6px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .label .badge {
+    background: var(--c-main);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: normal;
+  }
+  /* 標題列右側按鈕容器（將按鈕推到最右） */
+  .label .header-btns {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  /* 小尺寸按鈕（用於標題列） */
+  .btn-sm {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* 左側：輸入區 */
+  textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+    border: 2px solid var(--c-light);
+    border-radius: 8px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 14px;
+    resize: none; /* 移除手動調整，由佈局決定高度 */
+    transition: border 0.2s;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: var(--c-main);
+    box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.15);
+  }
+  .options {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .options input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--c-main);
+  }
+  .options select {
+    padding: 3px 6px;
+    border: 1px solid var(--c-light);
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+  }
+  .btn-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s;
+  }
+  .btn-secondary {
+    background: var(--c-light);
+    color: var(--c-dark);
+  }
+  .btn-secondary:hover {
+    background: var(--c-mid);
+    color: #fff;
+  }
+  /* 一鍵清空：紅色 */
+  .btn-danger {
+    background: var(--c-danger);
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background: var(--c-danger-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+  }
+  .btn-copy {
+    background: var(--c-gold);
+    color: var(--c-dark);
+  }
+  .btn-copy:hover {
+    background: var(--c-main);
+    color: #fff;
+  }
+
+  /* 右側：結果區 */
+  .result-box {
+    background: var(--c-cream);
+    border: 2px solid var(--c-light);
+    border-radius: 8px;
+    padding: 12px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    word-break: break-all;
+    white-space: pre-wrap;
+    color: var(--c-dark);
+    font-weight: 500;
+  }
+  .result-box.empty {
+    color: #999;
+    font-weight: normal;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+  .stat-card {
+    background: #fff;
+    border: 2px solid var(--c-light);
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .stat-card .num {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--c-dark);
+    line-height: 1.2;
+  }
+  .stat-card .lbl {
+    font-size: 10px;
+    color: #666;
+    margin-top: 1px;
+  }
+  .stat-card.ok { border-color: var(--c-main); background: var(--c-cream); }
+  .stat-card.ok .num { color: var(--c-main); }
+  .stat-card.err { border-color: var(--c-danger); background: #ffebee; }
+  .stat-card.err .num { color: var(--c-danger); }
+  .verify {
+    margin-top: 6px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .verify.ok {
+    background: var(--c-cream);
+    color: var(--c-dark);
+    border: 2px solid var(--c-main);
+  }
+  .verify.err {
+    background: #ffebee;
+    color: var(--c-danger-dark);
+    border: 2px solid var(--c-danger);
+  }
+  .verify.idle {
+    background: #f5f5f5;
+    color: #999;
+    border: 2px dashed #ccc;
+  }
+
+  .copy-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  .copy-status.idle { background: #eee; color: #999; }
+  .copy-status.copied {
+    background: var(--c-main);
+    color: #fff;
+    animation: pulse 0.5s;
+  }
+  .copy-status.failed { background: var(--c-danger); color: #fff; }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--c-dark);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-size: 13px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .toast.show { opacity: 1; }
+
+  /* 滾動條樣式 */
+  textarea::-webkit-scrollbar,
+  .result-box::-webkit-scrollbar,
+  .pane-right::-webkit-scrollbar {
+    width: 8px;
+  }
+  textarea::-webkit-scrollbar-thumb,
+  .result-box::-webkit-scrollbar-thumb,
+  .pane-right::-webkit-scrollbar-thumb {
+    background: var(--c-light);
+    border-radius: 4px;
+  }
+  textarea::-webkit-scrollbar-thumb:hover,
+  .result-box::-webkit-scrollbar-thumb:hover {
+    background: var(--c-main);
+  }
+
+  /* ============================================== */
+  /* 響應式：手機直立模式（上下分欄）              */
+  /* ============================================== */
+  @media (max-width: 900px) {
+    body { padding: 5px; }
+    .header { padding: 8px 12px; }
+    .header h1 { font-size: 16px; }
+    .header p { font-size: 11px; }
+    .layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+    .pane {
+      padding: 10px 12px;
+    }
+    .pane-left {
+      border-right: none;
+      border-bottom: 2px solid var(--c-light);
+    }
+    .stats {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .stat-card .num { font-size: 16px; }
+    .stat-card .lbl { font-size: 9px; }
+  }
+
+  /* 超小螢幕：手機 < 480px */
+  @media (max-width: 480px) {
+    .header h1 { font-size: 14px; }
+    .auto-badge { font-size: 10px; padding: 1px 6px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .options { font-size: 11px; }
+    .btn { padding: 6px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 編號區間整理工具 V2.2
+      <span class="auto-badge">⚡ 即時整理 · 自動複製</span>
+    </h1>
+    <p>連續編號自動壓縮為區間（例：002~016），含字母編號智慧插入</p>
+  </div>
+
+  <div class="layout">
+    <!-- 左側：輸入區 -->
+    <div class="pane pane-left">
+      <div class="label">
+        📝 輸入編號清單
+        <span class="badge">每行一個 / 逗號頓號空格皆可</span>
+        <span class="header-btns">
+          <button class="btn btn-secondary btn-sm" onclick="loadSample()">📥 載入範例</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ 一鍵清空</button>
+        </span>
+      </div>
+      <textarea id="input" placeholder="貼上編號清單即自動整理...&#10;&#10;範例：&#10;002&#10;003&#10;004&#10;...&#10;&#10;或：002, 003, 004, 067A, 068"></textarea>
+
+      <div class="options">
+        <label>
+          <input type="checkbox" id="optDedup" checked>
+          自動去重
+        </label>
+        <label>
+          分隔：
+          <select id="optSep">
+            <option value="、" selected>頓號「、」</option>
+            <option value=", ">逗號「,」</option>
+            <option value=" ">空格</option>
+            <option value="\n">換行</option>
+          </select>
+        </label>
+        <label>
+          區間：
+          <select id="optRange">
+            <option value="~" selected>「~」</option>
+            <option value="-">「-」</option>
+            <option value="～">「～」</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <!-- 右側：結果區 -->
+    <div class="pane pane-right">
+      <div class="label">
+        ✅ 整理結果
+        <span class="badge" id="resultBadge">尚未輸入</span>
+        <span class="header-btns">
+          <button class="btn btn-copy btn-sm" onclick="copyResult()">📋 手動複製</button>
+          <span class="copy-status idle" id="copyStatus">📋 待複製</span>
+        </span>
+      </div>
+      <div class="result-box empty" id="result">在左側輸入編號後，整理結果會即時顯示在這裡，並自動複製到剪貼簿</div>
+
+      <div class="label" style="margin-top:10px;">📊 統計驗算</div>
+      <div class="stats">
+        <div class="stat-card" id="statOrig">
+          <div class="num" id="numOrig">0</div>
+          <div class="lbl">原始筆數</div>
+        </div>
+        <div class="stat-card" id="statDedup">
+          <div class="num" id="numDedup">0</div>
+          <div class="lbl">去重後</div>
+        </div>
+        <div class="stat-card" id="statResult">
+          <div class="num" id="numResult">0</div>
+          <div class="lbl">整理後總數</div>
+        </div>
+        <div class="stat-card" id="statGroups">
+          <div class="num" id="numGroups">0</div>
+          <div class="lbl">區間項目數</div>
+        </div>
+      </div>
+      <div class="verify idle" id="verify">⏳ 等待輸入...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">已複製到剪貼簿！</div>
+
+<script>
+// ============================================================
+// 核心整理邏輯
+// ============================================================
+function parseInput(text) {
+  return text.split(/[\s,，、;；]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
+function isPureNumber(s) {
+  return /^\d+$/.test(s);
+}
+
+function padWithLeadingZero(num, refStr) {
+  const m = refStr.match(/\d+/);
+  if (!m) return String(num);
+  const width = m[0].length;
+  return String(num).padStart(width, '0');
+}
+
+function processData(autoCopy = true) {
+  const input = document.getElementById('input').value;
+  const sepRaw = document.getElementById('optSep').value;
+  const sep = sepRaw === '\\n' ? '\n' : sepRaw;
+  const rangeSym = document.getElementById('optRange').value;
+  const dedup = document.getElementById('optDedup').checked;
+
+  if (!input.trim()) {
+    document.getElementById('result').textContent = '在左側輸入編號後，整理結果會即時顯示在這裡，並自動複製到剪貼簿';
+    document.getElementById('result').className = 'result-box empty';
+    document.getElementById('numOrig').textContent = '0';
+    document.getElementById('numDedup').textContent = '0';
+    document.getElementById('numResult').textContent = '0';
+    document.getElementById('numGroups').textContent = '0';
+    document.getElementById('resultBadge').textContent = '尚未輸入';
+    document.getElementById('verify').className = 'verify idle';
+    document.getElementById('verify').textContent = '⏳ 等待輸入...';
+    document.getElementById('statResult').className = 'stat-card';
+    setCopyStatus('idle');
+    return;
+  }
+
+  const items = parseInput(input);
+  const origCount = items.length;
+  const uniqueItems = dedup ? [...new Set(items)] : items;
+  const dedupCount = uniqueItems.length;
+
+  const pureNums = [];
+  const specials = [];
+  uniqueItems.forEach(s => {
+    if (isPureNumber(s)) pureNums.push(s);
+    else specials.push(s);
+  });
+
+  pureNums.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+  const groups = [];
+  let totalCount = 0;
+  let i = 0;
+  while (i < pureNums.length) {
+    let j = i;
+    while (j + 1 < pureNums.length &&
+           parseInt(pureNums[j + 1], 10) === parseInt(pureNums[j], 10) + 1) {
+      j++;
+    }
+    if (i === j) {
+      groups.push(pureNums[i]);
+      totalCount += 1;
+    } else {
+      groups.push(pureNums[i] + rangeSym + pureNums[j]);
+      totalCount += (parseInt(pureNums[j], 10) - parseInt(pureNums[i], 10) + 1);
+    }
+    i = j + 1;
+  }
+
+  specials.sort((a, b) => {
+    const numA = parseInt(a.match(/^\d+/)?.[0] || '0', 10);
+    const numB = parseInt(b.match(/^\d+/)?.[0] || '0', 10);
+    if (numA !== numB) return numA - numB;
+    return a.localeCompare(b);
+  });
+
+  const allGroups = [];
+  let specialIdx = 0;
+
+  for (let g = 0; g < groups.length; g++) {
+    const grpStr = groups[g];
+    let grpStartNum, grpEndNum;
+    let isRange = grpStr.includes(rangeSym);
+    if (isRange) {
+      const parts = grpStr.split(rangeSym);
+      grpStartNum = parseInt(parts[0], 10);
+      grpEndNum = parseInt(parts[1], 10);
+    } else {
+      grpStartNum = grpEndNum = parseInt(grpStr, 10);
+    }
+
+    const inRangeSpecials = [];
+    while (specialIdx < specials.length) {
+      const spNum = parseInt(specials[specialIdx].match(/^\d+/)?.[0] || '0', 10);
+      if (spNum < grpStartNum) {
+        allGroups.push(specials[specialIdx]);
+        totalCount += 1;
+        specialIdx++;
+      } else if (spNum >= grpStartNum && spNum <= grpEndNum) {
+        inRangeSpecials.push(specials[specialIdx]);
+        specialIdx++;
+      } else {
+        break;
+      }
+    }
+
+    if (inRangeSpecials.length === 0) {
+      allGroups.push(grpStr);
+    } else {
+      if (!isRange) {
+        allGroups.push(grpStr);
+        inRangeSpecials.forEach(sp => {
+          allGroups.push(sp);
+          totalCount += 1;
+        });
+      } else {
+        let cursor = grpStartNum;
+        inRangeSpecials.forEach(sp => {
+          const spNum = parseInt(sp.match(/^\d+/)?.[0] || '0', 10);
+          if (cursor === spNum) {
+            allGroups.push(padWithLeadingZero(cursor, grpStr));
+          } else if (cursor < spNum) {
+            allGroups.push(padWithLeadingZero(cursor, grpStr) + rangeSym + padWithLeadingZero(spNum, grpStr));
+          }
+          allGroups.push(sp);
+          totalCount += 1;
+          cursor = spNum + 1;
+        });
+        if (cursor <= grpEndNum) {
+          if (cursor === grpEndNum) {
+            allGroups.push(padWithLeadingZero(cursor, grpStr));
+          } else {
+            allGroups.push(padWithLeadingZero(cursor, grpStr) + rangeSym + padWithLeadingZero(grpEndNum, grpStr));
+          }
+        }
+      }
+    }
+  }
+  while (specialIdx < specials.length) {
+    allGroups.push(specials[specialIdx]);
+    totalCount += 1;
+    specialIdx++;
+  }
+
+  const resultStr = allGroups.join(sep);
+
+  document.getElementById('result').textContent = resultStr;
+  document.getElementById('result').className = 'result-box';
+  document.getElementById('numOrig').textContent = origCount;
+  document.getElementById('numDedup').textContent = dedupCount;
+  document.getElementById('numResult').textContent = totalCount;
+  document.getElementById('numGroups').textContent = allGroups.length;
+  document.getElementById('resultBadge').textContent = `共 ${allGroups.length} 組`;
+
+  const verify = document.getElementById('verify');
+  if (totalCount === dedupCount) {
+    verify.className = 'verify ok';
+    verify.innerHTML = `✅ 驗算成功：整理後 ${totalCount} = 去重後 ${dedupCount}（零誤差）`;
+    document.getElementById('statResult').className = 'stat-card ok';
+  } else {
+    verify.className = 'verify err';
+    verify.innerHTML = `❌ 驗算失敗：整理後 ${totalCount} ≠ 去重後 ${dedupCount}`;
+    document.getElementById('statResult').className = 'stat-card err';
+  }
+
+  if (autoCopy && resultStr) {
+    autoCopyToClipboard(resultStr);
+  }
+}
+
+// ============================================================
+// 自動複製機制
+// ============================================================
+function autoCopyToClipboard(text) {
+  if (!navigator.clipboard) {
+    setCopyStatus('failed');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    setCopyStatus('copied');
+  }).catch(() => {
+    setCopyStatus('failed');
+  });
+}
+
+function setCopyStatus(state) {
+  const el = document.getElementById('copyStatus');
+  el.className = 'copy-status ' + state;
+  if (state === 'idle') el.textContent = '📋 待複製';
+  else if (state === 'copied') el.textContent = '✅ 已自動複製';
+  else if (state === 'failed') el.textContent = '⚠️ 複製失敗';
+}
+
+// ============================================================
+// 即時整理（debounce）
+// ============================================================
+let debounceTimer = null;
+function scheduleProcess() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => processData(true), 150);
+}
+
+document.getElementById('input').addEventListener('input', scheduleProcess);
+document.getElementById('optDedup').addEventListener('change', () => processData(true));
+document.getElementById('optSep').addEventListener('change', () => processData(true));
+document.getElementById('optRange').addEventListener('change', () => processData(true));
+
+// ============================================================
+// 輔助功能
+// ============================================================
+function loadSample() {
+  document.getElementById('input').value =
+`021
+022
+041
+042
+084
+086
+087
+002
+082
+019
+046
+058
+091
+017
+044
+056
+089
+112
+003
+004
+005
+006
+007
+008
+009
+010
+011
+012
+013
+014
+015
+016
+020
+043
+047
+048
+049
+050
+051
+052
+053
+054
+055
+059
+060
+061
+062
+063
+064
+065
+066
+067
+067A
+068
+069
+070
+071
+072
+073
+074
+075
+076
+077
+078
+079
+080
+081
+088
+092
+093
+094
+095
+096
+097
+098
+099
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111`;
+  processData(true);
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  processData(true);
+  showToast('已清空');
+}
+
+function copyResult() {
+  const text = document.getElementById('result').textContent;
+  if (!text || document.getElementById('result').classList.contains('empty')) {
+    showToast('沒有可複製的結果！');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✅ 已複製到剪貼簿！');
+    setCopyStatus('copied');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ 已複製到剪貼簿！');
+    setCopyStatus('copied');
+  });
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+</script>
+</body>
+</html>
