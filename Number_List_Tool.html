@@ -3,12 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>編號區間整理工具 V2.2</title>
+<title>編號整理神器</title>
 <!--
 ================================================================
-編號區間整理工具 V2.2
+編號整理神器 V2.3
 ================================================================
 更新日誌：
+  V2.3：
+    - 網頁標題改為「編號整理神器」
+    - 三欄順序調整為：輸入編號清單 / 整理結果 / 數量加總工具
+    - 數量加總工具獨立為橘色系視覺，與編號區間整理工具明顯區分
+    - 數量加總工具支援 *、＊、x、X、× 等乘號格式
+    - 數量加總工具支援逗號、頓號、分號、換行、空白分隔
+    - 數量加總工具新增一鍵清空按鈕
+    - 數量加總工具新增無乘號判定：未輸入 * 數量時，自動視為 *1
+  V2.2：
   V2.2：
     - 按鈕位置調整：載入範例/一鍵清空 移至「輸入編號清單」標題列右側
     - 手動複製按鈕 + 已自動複製徽章 移至「整理結果」標題列右側
@@ -44,6 +53,11 @@ AI 接手指引（重要）：
     --c-mid: #388E3C;
     --c-danger: #E53935;
     --c-danger-dark: #B71C1C;
+    --q-main: #F57C00;
+    --q-dark: #E65100;
+    --q-light: #FFE0B2;
+    --q-cream: #FFF8E1;
+    --q-border: #FB8C00;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -100,10 +114,10 @@ AI 接手指引（重要）：
     font-weight: bold;
   }
 
-  /* 左右兩欄佈局 */
+  /* 三欄佈局：輸入 / 整理結果 / 數量加總 */
   .layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0;
     flex: 1;
     min-height: 0;
@@ -122,7 +136,45 @@ AI 接手指引（重要）：
   }
   .pane-right {
     background: #fff;
-    overflow-y: auto; /* 右側若內容多，獨立捲動 */
+    overflow-y: auto; /* 內容多時，獨立捲動 */
+  }
+  .pane-result {
+    background: #fff;
+  }
+  .pane-qty {
+    background: var(--q-cream);
+    border-left: 3px solid var(--q-border);
+    box-shadow: inset 6px 0 0 rgba(245, 124, 0, 0.10);
+  }
+  .pane-qty .label {
+    color: var(--q-dark);
+  }
+  .pane-qty .label .badge {
+    background: var(--q-main);
+    color: #fff;
+  }
+  .pane-qty textarea {
+    border-color: var(--q-light);
+    background: #fffdfa;
+  }
+  .pane-qty textarea:focus {
+    border-color: var(--q-main);
+    box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.18);
+  }
+  .pane-qty .result-box {
+    background: #fffdfa;
+    border-color: var(--q-light);
+    color: var(--q-dark);
+  }
+  .pane-qty .stat-card {
+    border-color: var(--q-light);
+  }
+  .pane-qty .stat-card.ok {
+    border-color: var(--q-main);
+    background: #fff3e0;
+  }
+  .pane-qty .stat-card.ok .num {
+    color: var(--q-main);
   }
 
   .label {
@@ -394,7 +446,7 @@ AI 接手指引（重要）：
     .header p { font-size: 11px; }
     .layout {
       grid-template-columns: 1fr;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
     }
     .pane {
       padding: 10px 12px;
@@ -402,6 +454,11 @@ AI 接手指引（重要）：
     .pane-left {
       border-right: none;
       border-bottom: 2px solid var(--c-light);
+    }
+    .pane-qty {
+      border-left: none;
+      border-top: 3px solid var(--q-border);
+      box-shadow: inset 0 6px 0 rgba(245, 124, 0, 0.10);
     }
     .stats {
       grid-template-columns: repeat(4, 1fr);
@@ -423,10 +480,10 @@ AI 接手指引（重要）：
 <body>
 <div class="container">
   <div class="header">
-    <h1>📋 編號區間整理工具 V2.2
+    <h1>📋 編號整理神器
       <span class="auto-badge">⚡ 即時整理 · 自動複製</span>
     </h1>
-    <p>連續編號自動壓縮為區間（例：002~016），含字母編號智慧插入</p>
+    <p>連續編號自動壓縮為區間（例：002~016），含字母編號智慧插入；右側另有獨立數量加總工具</p>
   </div>
 
   <div class="layout">
@@ -467,8 +524,8 @@ AI 接手指引（重要）：
       </div>
     </div>
 
-    <!-- 右側：結果區 -->
-    <div class="pane pane-right">
+    <!-- 中間：結果區 -->
+    <div class="pane pane-right pane-result">
       <div class="label">
         ✅ 整理結果
         <span class="badge" id="resultBadge">尚未輸入</span>
@@ -500,6 +557,52 @@ AI 接手指引（重要）：
       </div>
       <div class="verify idle" id="verify">⏳ 等待輸入...</div>
     </div>
+
+
+    <!-- 右側：數量加總工具（獨立工具） -->
+    <div class="pane pane-right pane-qty">
+      <div class="label">
+        🧮 數量加總工具
+        <span class="badge">貼上即時統計</span>
+        <span class="header-btns">
+          <button class="btn btn-danger btn-sm" onclick="clearQtyTool()">🗑️ 清空數量</button>
+        </span>
+      </div>
+
+      <textarea
+        id="qtyInput"
+        placeholder="範例：&#10;1101*2、1103*4、12011&#10;&#10;沒有 * 數量時會自動視為 *1"
+      ></textarea>
+
+      <div class="stats" style="margin-top:12px;">
+        <div class="stat-card ok">
+          <div class="num" id="qtyTotal">0</div>
+          <div class="lbl">總數量</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="num" id="qtyItems">0</div>
+          <div class="lbl">項目數</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="num" id="qtyDuplicate">0</div>
+          <div class="lbl">重複品名</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="num" id="qtyError">0</div>
+          <div class="lbl">格式錯誤</div>
+        </div>
+      </div>
+
+      <div class="result-box" id="qtyResult" style="margin-top:10px; min-height:120px;">
+        等待輸入...
+      </div>
+    </div>
+
+
+
   </div>
 </div>
 
@@ -848,6 +951,104 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 1500);
 }
+
+// ============================================================
+// 數量加總工具
+// ============================================================
+function resetQtyToolView() {
+  document.getElementById('qtyTotal').textContent = '0';
+  document.getElementById('qtyItems').textContent = '0';
+  document.getElementById('qtyDuplicate').textContent = '0';
+  document.getElementById('qtyError').textContent = '0';
+  document.getElementById('qtyResult').textContent = '等待輸入...';
+}
+
+function clearQtyTool() {
+  document.getElementById('qtyInput').value = '';
+  resetQtyToolView();
+  showToast('已清空數量加總工具');
+}
+
+function processQtyTool() {
+  const text = document.getElementById('qtyInput').value;
+
+  if (!text.trim()) {
+    resetQtyToolView();
+    return;
+  }
+
+  const items = text.split(/[、,，;；\s]+/);
+
+  let total = 0;
+  let validCount = 0;
+  let errorCount = 0;
+
+  const duplicateMap = {};
+  const duplicates = [];
+  const errors = [];
+  const autoOneItems = [];
+
+  for (let raw of items) {
+    const item = raw.trim();
+
+    if (!item) continue;
+
+    let name = '';
+    let qty = 1;
+    const match = item.match(/^(.+?)[*＊xX×]\s*(\d+)$/);
+
+    if (match) {
+      name = match[1].trim();
+      qty = parseInt(match[2], 10);
+    } else {
+      // 沒有乘號格式時，一律視為數量 1。
+      name = item;
+      qty = 1;
+      autoOneItems.push(item);
+    }
+
+    if (!name || !Number.isFinite(qty) || qty <= 0) {
+      errorCount++;
+      errors.push(item);
+      continue;
+    }
+
+    total += qty;
+    validCount++;
+
+    duplicateMap[name] = (duplicateMap[name] || 0) + 1;
+  }
+
+  for (const key in duplicateMap) {
+    if (duplicateMap[key] > 1) {
+      duplicates.push(`${key}（${duplicateMap[key]}次）`);
+    }
+  }
+
+  document.getElementById('qtyTotal').textContent = total;
+  document.getElementById('qtyItems').textContent = validCount;
+  document.getElementById('qtyDuplicate').textContent = duplicates.length;
+  document.getElementById('qtyError').textContent = errorCount;
+
+  let html = `✅ 總數量：${total}`;
+
+  if (autoOneItems.length > 0) {
+    html += `\n\nℹ️ 未標數量，已自動視為 *1：\n${autoOneItems.join('\n')}`;
+  }
+
+  if (duplicates.length > 0) {
+    html += `\n\n⚠️ 重複品名：\n${duplicates.join('\n')}`;
+  }
+
+  if (errors.length > 0) {
+    html += `\n\n❌ 格式錯誤：\n${errors.join('\n')}`;
+  }
+
+  document.getElementById('qtyResult').textContent = html;
+}
+
+document.getElementById('qtyInput').addEventListener('input', processQtyTool);
+
 </script>
 </body>
 </html>
