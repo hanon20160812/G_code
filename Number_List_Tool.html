@@ -571,7 +571,7 @@ AI 接手指引（重要）：
 
       <textarea
         id="qtyInput"
-        placeholder="範例：&#10;1101*2、1103*4、12011&#10;&#10;沒有 * 數量時會自動視為 *1"
+        placeholder="範例：&#10;041~043、045~050、056、058、077、079~080&#10;1101*2、1103*4、12011&#10;&#10;沒有 * 數量時會自動視為 *1&#10;出現 ~ 時會自動計算連續號數量"
       ></textarea>
 
       <div class="stats" style="margin-top:12px;">
@@ -969,6 +969,39 @@ function clearQtyTool() {
   showToast('已清空數量加總工具');
 }
 
+function getQtyRangeCount(name) {
+  const normalized = name.replace(/～/g, '~');
+  const match = normalized.match(/^(\d+)\s*~\s*(\d+)$/);
+
+  if (!match) {
+    return {
+      ok: true,
+      count: 1,
+      isRange: false,
+      display: name
+    };
+  }
+
+  const start = parseInt(match[1], 10);
+  const end = parseInt(match[2], 10);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return {
+      ok: false,
+      count: 0,
+      isRange: true,
+      display: name
+    };
+  }
+
+  return {
+    ok: true,
+    count: end - start + 1,
+    isRange: true,
+    display: normalized
+  };
+}
+
 function processQtyTool() {
   const text = document.getElementById('qtyInput').value;
 
@@ -987,6 +1020,7 @@ function processQtyTool() {
   const duplicates = [];
   const errors = [];
   const autoOneItems = [];
+  const rangeItems = [];
 
   for (let raw of items) {
     const item = raw.trim();
@@ -994,29 +1028,39 @@ function processQtyTool() {
     if (!item) continue;
 
     let name = '';
-    let qty = 1;
+    let multiplier = 1;
     const match = item.match(/^(.+?)[*＊xX×]\s*(\d+)$/);
 
     if (match) {
       name = match[1].trim();
-      qty = parseInt(match[2], 10);
+      multiplier = parseInt(match[2], 10);
     } else {
       // 沒有乘號格式時，一律視為數量 1。
       name = item;
-      qty = 1;
+      multiplier = 1;
       autoOneItems.push(item);
     }
 
-    if (!name || !Number.isFinite(qty) || qty <= 0) {
+    const rangeInfo = getQtyRangeCount(name);
+
+    if (!name || !Number.isFinite(multiplier) || multiplier <= 0 || !rangeInfo.ok) {
       errorCount++;
       errors.push(item);
       continue;
     }
 
+    const qty = rangeInfo.count * multiplier;
     total += qty;
     validCount++;
 
-    duplicateMap[name] = (duplicateMap[name] || 0) + 1;
+    if (rangeInfo.isRange) {
+      const note = multiplier === 1
+        ? `${rangeInfo.display} = ${rangeInfo.count} 個`
+        : `${rangeInfo.display} × ${multiplier} = ${qty} 個`;
+      rangeItems.push(note);
+    }
+
+    duplicateMap[rangeInfo.display] = (duplicateMap[rangeInfo.display] || 0) + 1;
   }
 
   for (const key in duplicateMap) {
@@ -1031,6 +1075,10 @@ function processQtyTool() {
   document.getElementById('qtyError').textContent = errorCount;
 
   let html = `✅ 總數量：${total}`;
+
+  if (rangeItems.length > 0) {
+    html += `\n\n📐 連續號區間計算：\n${rangeItems.join('\n')}`;
+  }
 
   if (autoOneItems.length > 0) {
     html += `\n\nℹ️ 未標數量，已自動視為 *1：\n${autoOneItems.join('\n')}`;
