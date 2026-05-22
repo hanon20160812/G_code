@@ -3,52 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>620專用G-CODE生成器 V1.1 (座標優化版)</title>
+    <title>620專用G-CODE生成器 V2.1</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Microsoft JhengHei", Arial, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); overflow: hidden; }
-        header { background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%); color: white; padding: 25px 30px; text-align: center; }
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; min-height: calc(100vh - 200px); }
+
+        /* ===== HEADER ===== */
+        header { background: linear-gradient(90deg, #1c2f4a 0%, #2c4a7c 100%); color: white; padding: 20px 30px 0 30px; text-align: center; }
+        header h1 { font-size: 24px; letter-spacing: 1px; margin-bottom: 4px; }
+        header .subtitle { font-size: 13px; color: #90b8e0; margin-bottom: 18px; }
+
+        /* ===== MODE TABS ===== */
+        .mode-tabs { display: flex; justify-content: center; gap: 0; margin: 0 auto; max-width: 500px; }
+        .mode-tab {
+            flex: 1; padding: 12px 20px; cursor: pointer; font-size: 15px; font-weight: bold;
+            border: none; border-radius: 10px 10px 0 0; transition: all 0.25s; letter-spacing: 0.5px;
+        }
+        .mode-tab.inactive { background: rgba(255,255,255,0.12); color: #90b8e0; }
+        .mode-tab.inactive:hover { background: rgba(255,255,255,0.22); }
+        .mode-tab.active { background: white; color: #1c2f4a; box-shadow: 0 -4px 12px rgba(0,0,0,0.15); }
+        .mode-badge { font-size: 10px; background: #3498db; color: white; border-radius: 8px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+        .mode-tab.active .mode-badge { background: #1c2f4a; }
+
+        /* ===== MODE PANELS ===== */
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+
+        /* ===== MODE A: 3-col grid ===== */
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; min-height: calc(100vh - 220px); }
         .panel { padding: 25px; border-right: 1px solid #e0e0e0; }
         .panel:last-child { border-right: none; }
-        .panel-header { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #3498db; }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; font-size: 14px; font-weight: bold; color: #34495e; margin-bottom: 8px; }
-        .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
+        .panel-header { font-size: 17px; font-weight: bold; color: #1c2f4a; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #3498db; }
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 13px; font-weight: bold; color: #34495e; margin-bottom: 7px; }
+        .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 15px; transition: border-color 0.2s; }
+        .input-group input:focus, .input-group select:focus { border-color: #3498db; outline: none; }
         textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-family: "Consolas", monospace; font-size: 13px; resize: vertical; }
-        button { padding: 12px 24px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 10px; }
-        button:hover { background: #2980b9; transform: translateY(-2px); }
-        .btn-success { background: #27ae60; }
-        .btn-warning { background: #f39c12; }
-        .preview-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; margin-top: 15px; }
-        .coordinate-list { max-height: 150px; overflow-y: auto; font-family: "Consolas", monospace; font-size: 12px; }
-        .stat-item { background: white; border: 2px solid #e0e0e0; border-radius: 6px; padding: 10px; text-align: center; margin-bottom: 10px; }
-        .param-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        .param-table th { background: #34495e; color: white; padding: 8px; }
-        .param-table td { padding: 8px; border-bottom: 1px solid #eee; }
-        #gcodeOutput { background: #2c3e50; color: #2ecc71; min-height: 500px; }
+        textarea:focus { border-color: #3498db; outline: none; }
+
+        /* Buttons */
+        button { padding: 11px 20px; background: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 10px; font-size: 14px; }
+        button:hover { background: #2980b9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(52,152,219,0.3); }
+        button:disabled { background: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-success { background: #27ae60; } .btn-success:hover { background: #219a52; box-shadow: 0 4px 12px rgba(39,174,96,0.3); }
+        .btn-warning { background: #f39c12; } .btn-warning:hover { background: #d68910; }
+        .btn-danger  { background: #e74c3c; } .btn-danger:hover  { background: #c0392b; }
+        .btn-purple  { background: #8e44ad; } .btn-purple:hover  { background: #7d3c98; }
+        .btn-generate { background: linear-gradient(135deg, #2980b9, #1c2f4a); height: 60px; font-size: 18px; margin-top: 25px; border-radius: 8px; letter-spacing: 1px; }
+        .btn-generate:hover { background: linear-gradient(135deg, #3498db, #2c4a7c); }
+        .btn-generate-purple { background: linear-gradient(135deg, #8e44ad, #5b2c6f); height: 54px; font-size: 16px; border-radius: 8px; letter-spacing: 1px; }
+        .btn-generate-purple:hover { background: linear-gradient(135deg, #9b59b6, #6c3483); }
+
+        /* MODE A specific */
+        .preview-box { background: #f0f4fa; border: 1px solid #b8cfe8; border-radius: 6px; padding: 12px; margin-top: 12px; }
+        .preview-box.disabled { opacity: 0.35; pointer-events: none; }
+        .preview-box h4 { font-size: 13px; color: #1c2f4a; margin-bottom: 8px; font-weight: bold; }
+        .coordinate-list { max-height: 130px; overflow-y: auto; font-family: "Consolas", monospace; font-size: 12px; color: #2c3e50; line-height: 1.8; }
+        .param-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .param-table th { background: #1c2f4a; color: white; padding: 9px 8px; text-align: center; }
+        .param-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+        .param-table tr.disabled-row td { color: #aaa; text-decoration: line-through; background: #f5f5f5; }
+        #gcodeOutput { background: #1c2f4a; color: #5dade2; min-height: 480px; font-family: "Consolas", monospace; font-size: 12.5px; line-height: 1.7; }
         .sort-info { font-size: 11px; color: #e67e22; margin-top: 5px; font-weight: bold; }
+
+        /* Toggle switch */
+        .segment-toggles { margin-bottom: 18px; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #eef4fb; border: 2px solid #c5d9ef; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; transition: all 0.25s; }
+        .toggle-row.off { background: #fafafa; border-color: #e0e0e0; }
+        .toggle-label { font-weight: bold; font-size: 14px; color: #1c2f4a; flex: 1; }
+        .toggle-label .sub { font-size: 11px; font-weight: normal; color: #7f8c8d; margin-left: 6px; }
+        .toggle-row.off .toggle-label { color: #aaa; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 26px; transition: 0.3s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        input:checked + .slider { background: #27ae60; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .badge-on  { font-size: 11px; font-weight: bold; color: #27ae60; margin-right: 8px; }
+        .badge-off { font-size: 11px; font-weight: bold; color: #aaa;    margin-right: 8px; }
+        .warn-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #856404; margin-top: 8px; display: none; }
+
+        /* ===== MODE B: CONCAT ===== */
+        .concat-wrap { padding: 28px 30px; }
+        .concat-section { margin-bottom: 22px; padding: 22px 24px; background: #fafafa; border-radius: 8px; border-left: 4px solid #8e44ad; }
+        .concat-section h2 { margin: 0 0 16px 0; font-size: 16px; color: #1c2f4a; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .step-num-purple { background: #8e44ad; color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; flex-shrink: 0; }
+
+        /* 工具列 */
+        .concat-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .concat-toolbar-left  { display: flex; gap: 10px; flex-wrap: wrap; }
+        .concat-toolbar-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .tb-btn { padding: 9px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; margin: 0; width: auto; }
+        .tb-btn:hover { transform: translateY(-1px); }
+        .tb-btn-purple   { background: #8e44ad; color: white; }
+        .tb-btn-purple:hover { background: #7d3c98; box-shadow: 0 3px 8px rgba(142,68,173,0.3); }
+        .tb-btn-gray     { background: #5d6d7e; color: white; }
+        .tb-btn-gray:hover { background: #4a5568; }
+        .tb-btn-danger   { background: #e74c3c; color: white; }
+        .tb-btn-danger:hover { background: #c0392b; }
+        .tb-btn-outline  { background: transparent; border: 2px solid #8e44ad; color: #8e44ad; }
+        .tb-btn-outline:hover  { background: #f3e5f5; }
+        .tb-btn-outline.active { background: #8e44ad; color: white; }
+
+        /* 佇列 table */
+        .queue-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .queue-table thead th { background: #4a235a; color: white; padding: 11px 12px; text-align: center; border: 1px solid #3a1848; white-space: nowrap; }
+        .queue-table tbody td { padding: 11px 12px; border: 1px solid #eee; text-align: center; vertical-align: middle; }
+        .queue-table tbody tr:hover td { background: #f9f0ff; }
+        .queue-table .empty-row td { text-align: center; color: #aaa; padding: 40px; }
+
+        /* 拖拉 */
+        .draggable-row { cursor: grab; }
+        .draggable-row:active { cursor: grabbing; }
+        .draggable-row.dragging { opacity: 0.35; background: #e1bee7 !important; outline: 2px dashed #8e44ad; }
+        .drag-handle { color: #ccc; font-size: 16px; cursor: grab; user-select: none; }
+        .drag-over-top    { border-top: 3px solid #8e44ad !important; }
+        .drag-over-bottom { border-bottom: 3px solid #8e44ad !important; }
+
+        /* 數量控件 */
+        .qty-wrap { display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .qty-btn  { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ce93d8; background: white; cursor: pointer; font-weight: bold; font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; margin: 0; width: 28px; padding: 0; transition: all 0.15s; }
+        .qty-btn:hover { background: #f3e5f5; border-color: #8e44ad; transform: none; box-shadow: none; }
+        .qty-input { width: 54px; padding: 5px 4px; border: 2px solid #ce93d8; border-radius: 6px; text-align: center; font-weight: bold; color: #8e44ad; font-size: 14px; }
+        .qty-input:focus { border-color: #8e44ad; outline: none; }
+
+        /* 刪除按鈕 */
+        .del-btn { background: #e74c3c; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-weight: bold; font-size: 13px; margin: 0; width: auto; transition: all 0.2s; }
+        .del-btn:hover { background: #c0392b; transform: none; box-shadow: none; }
+
+        .concat-stats { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+        .stat-chip { background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 20px; padding: 6px 16px; font-size: 13px; color: #6c3483; font-weight: bold; }
+
+        /* N碼對照表 */
+        .n-table-preview { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .n-table-preview th { background: #5d6d7e; color: white; padding: 9px 10px; text-align: center; }
+        .n-table-preview td { padding: 8px 10px; border-bottom: 1px solid #f0e6f8; text-align: center; }
+        .n-table-preview tr:hover td { background: #f9f0ff; }
+        .preview-title { font-size: 16px; color: #1c2f4a; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        .preview-title::before { content: ""; width: 5px; height: 22px; background: #8e44ad; border-radius: 3px; display: inline-block; }
+
+        /* Toast */
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #2c3e50; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; opacity: 0; transition: all 0.3s; z-index: 9999; pointer-events: none; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast.error { background: #e74c3c; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>620專用G-CODE生成器 V1.1</h1>
-            <p>已優化路徑排序：N1(自選) → N2(右至左) → N3(左至右)</p>
-        </header>
+<div id="toast"></div>
+<div class="container">
+    <header>
+        <h1>620專用G-CODE生成器 V2.1</h1>
+        <p class="subtitle">模式A：CAD座標生成 G-CODE　｜　模式B：G-CODE 串接　｜　N1/N2/N3 段落可獨立開關</p>
+        <div class="mode-tabs">
+            <button class="mode-tab active" id="tab-a" onclick="switchMode('a')">
+                ⚙️ 模式A：生成 G-CODE
+                <span class="mode-badge">生成</span>
+            </button>
+            <button class="mode-tab inactive" id="tab-b" onclick="switchMode('b')">
+                🔗 模式B：串接 G-CODE
+                <span class="mode-badge">串接</span>
+            </button>
+        </div>
+    </header>
 
+    <!-- ===================== MODE A ===================== -->
+    <div class="mode-panel active" id="panel-a">
         <div class="main-grid">
+
+            <!-- 左欄：輸入 -->
             <div class="panel">
                 <div class="panel-header">📥 輸入區</div>
                 <div class="input-group">
                     <label>品名辨識 (自動解析)</label>
                     <input type="text" id="productNameParser" placeholder="例如: 6190710L    L=3774.32" oninput="parseProductInfo()">
-                    <p class="sort-info">※ 輸入後自動解析品名和長度</p>
+                    <p class="sort-info">※ 自動解析品名和長度</p>
                 </div>
                 <div class="input-group">
-                    <label>品名 (下載檔名將以此命名)</label>
-                    <input type="text" id="productName" placeholder="例如: 620-10" value="">
+                    <label>品名 (下載檔名)</label>
+                    <input type="text" id="productName" placeholder="例如: 620-10">
                 </div>
                 <div class="input-group">
                     <label>工件長度 (L)</label>
@@ -56,12 +189,12 @@
                 </div>
                 <div class="input-group">
                     <label>CAD 座標 (JSON)</label>
-                    <div id="cadMessage" style="color: red; font-size: 12px; margin-bottom: 5px; display: none;"></div>
+                    <div id="cadMessage" style="font-size:12px;font-weight:bold;margin-bottom:5px;display:none;"></div>
                     <textarea id="cadCoordinates" rows="10" onpaste="handlePaste()"></textarea>
                 </div>
                 <div class="input-group">
                     <label>N1 (3.5mm) 加工方向</label>
-                    <select id="n1SortOrder">
+                    <select id="n1SortOrder" onchange="updatePreviews()">
                         <option value="asc">X 昇序 (由左至右)</option>
                         <option value="desc">X 降序 (由右至左)</option>
                     </select>
@@ -69,199 +202,802 @@
                 </div>
                 <button onclick="pasteFromClipboard()">📋 貼上座標</button>
                 <button class="btn-warning" onclick="processCoordinates()">🔄 處理並預覽排序</button>
-                <button class="btn-warning" onclick="clearAll()" style="background: #e74c3c;">🗑️ 一鍵清空</button>
-                
+                <button class="btn-danger" onclick="clearAll()">🗑️ 一鍵清空</button>
             </div>
 
+            <!-- 中欄：開關 + 參數 + 預覽 -->
             <div class="panel">
-                <div class="panel-header">⚙️ 加工參數 (固定)</div>
-                <table class="param-table">
-                    <tr><th>段落</th><th>刀具</th><th>參數</th></tr>
-                    <tr><td>N1</td><td>T10 (3.5)</td><td>S3200 F150 / Z-7.</td></tr>
-                    <tr><td>N2</td><td>T11 (4.2)</td><td>S3000 F100 / Z-9.</td></tr>
-                    <tr><td>N3</td><td>T12 (M5)</td><td>S200 F0.8 / Z-10.</td></tr>
-                </table>
-                <div style="margin-top: 30px;">
-                    <div class="preview-box">
-                        <h4>3.5mm (N1) 排序預覽</h4>
-                        <div class="coordinate-list" id="preview35"></div>
+                <div class="panel-header">⚙️ 加工參數 & 段落開關</div>
+                <div class="segment-toggles">
+                    <div class="toggle-row" id="row-n1">
+                        <span class="toggle-label">N1 — T10 (3.5mm 鑽孔)<span class="sub">S3200 F150 / Z-7.</span></span>
+                        <span class="badge-on" id="badge-n1">ON</span>
+                        <label class="switch"><input type="checkbox" id="toggle-n1" checked onchange="onToggleChange()"><span class="slider"></span></label>
                     </div>
-                    <div class="preview-box" style="margin-top: 15px;">
-                        <h4>4.2mm (N2/N3) 排序預覽</h4>
-                        <div class="coordinate-list" id="preview42"></div>
+                    <div class="toggle-row" id="row-n2">
+                        <span class="toggle-label">N2 — T11 (4.2mm 鑽孔)<span class="sub">S3000 F100 / Z-9.</span></span>
+                        <span class="badge-on" id="badge-n2">ON</span>
+                        <label class="switch"><input type="checkbox" id="toggle-n2" checked onchange="onToggleChange()"><span class="slider"></span></label>
                     </div>
+                    <div class="toggle-row" id="row-n3">
+                        <span class="toggle-label">N3 — T12 (M5 攻牙)<span class="sub">S200 F0.8 / Z-10.</span></span>
+                        <span class="badge-on" id="badge-n3">ON</span>
+                        <label class="switch"><input type="checkbox" id="toggle-n3" checked onchange="onToggleChange()"><span class="slider"></span></label>
+                    </div>
+                    <div class="warn-box" id="warn-n3">⚠️ N2 已關閉，N3 攻牙段落已同步停用</div>
+                    <div class="warn-box" id="warn-all">⚠️ 所有段落均已關閉，無法生成 G-CODE</div>
                 </div>
-                <button class="btn-success" onclick="generateGCode()" style="margin-top: 30px; height: 60px; font-size: 18px;">⚡ 生成 G-CODE</button>
+                <table class="param-table">
+                    <tr><th>段落</th><th>刀具</th><th>參數</th><th>狀態</th></tr>
+                    <tr id="tr-n1"><td>N1</td><td>T10 (3.5)</td><td>S3200 F150 / Z-7.</td><td id="td-n1-status" style="color:#27ae60;font-weight:bold;">✔ 啟用</td></tr>
+                    <tr id="tr-n2"><td>N2</td><td>T11 (4.2)</td><td>S3000 F100 / Z-9.</td><td id="td-n2-status" style="color:#27ae60;font-weight:bold;">✔ 啟用</td></tr>
+                    <tr id="tr-n3"><td>N3</td><td>T12 (M5)</td><td>S200 F0.8 / Z-10.</td><td id="td-n3-status" style="color:#27ae60;font-weight:bold;">✔ 啟用</td></tr>
+                </table>
+                <div class="preview-box" id="box-preview35" style="margin-top:20px;">
+                    <h4>3.5mm (N1) 排序預覽</h4>
+                    <div class="coordinate-list" id="preview35"></div>
+                </div>
+                <div class="preview-box" id="box-preview42" style="margin-top:12px;">
+                    <h4>4.2mm (N2/N3) 排序預覽</h4>
+                    <div class="coordinate-list" id="preview42"></div>
+                </div>
+                <button class="btn-generate" onclick="generateGCode()">⚡ 生成 G-CODE</button>
             </div>
 
+            <!-- 右欄：輸出 -->
             <div class="panel">
                 <div class="panel-header">📤 G-CODE 輸出</div>
                 <textarea id="gcodeOutput" readonly></textarea>
                 <button onclick="copyGCode()">📋 複製到剪貼簿</button>
-                <button class="btn-success" onclick="saveGCode()">💾 儲存為檔案 (T+品名.txt)</button>
-                <div id="outputMessage" style="margin-top: 10px; text-align: center;"></div>
+                <button class="btn-success" onclick="saveGCode()">💾 儲存為檔案 (品名.txt)</button>
             </div>
         </div>
-    </div>
+    </div><!-- /panel-a -->
 
-    <script>
-        let coordinates35 = [];
-        let coordinates42 = [];
+    <!-- ===================== MODE B: CONCAT ===================== -->
+    <div class="mode-panel" id="panel-b">
+        <div class="concat-wrap">
 
-        function handlePaste() {
-            setTimeout(function() {
-                processCoordinates();
-            }, 100);
+            <!-- 說明 -->
+            <div class="concat-section">
+                <h2><span class="step-num-purple">ℹ</span> 模式說明</h2>
+                <div style="font-size:13px;color:#444;line-height:2;background:white;border-radius:6px;padding:14px 18px;border:1px solid #e1bee7;">
+                    將多筆由 <strong>模式A</strong> 產出的獨立 620 G-CODE (.txt) 串接為單一程式檔案。<br>
+                    ① 使用「導入 TXT 資料夾」批次匯入，或點「載入範例」快速預覽效果<br>
+                    ② 可直接<strong>拖拉列</strong>調整加工順序，每筆可設定加工 PCS 數量（重複展開 N 段）<br>
+                    ③ 段落間 <code>M30</code> 改為 <code>M1</code>，最後一筆保留 <code>M30</code>　④ 同步輸出 <strong>N碼對照表（.csv）</strong>
+                </div>
+            </div>
+
+            <!-- 工具列 + 佇列 -->
+            <div class="concat-section">
+                <h2>
+                    <span class="step-num-purple">1</span>
+                    <span>串接佇列</span>
+                    <span id="queueCountBadge" style="font-size:12px;background:#8e44ad;color:white;border-radius:10px;padding:2px 10px;">0 筆</span>
+                </h2>
+
+                <!-- 工具列 -->
+                <div class="concat-toolbar">
+                    <div class="concat-toolbar-left">
+                        <button class="tb-btn tb-btn-purple" onclick="ccatLoadExample()">💡 載入範例清單</button>
+                        <input type="file" id="folderTxtInput" webkitdirectory directory multiple hidden accept=".txt">
+                        <button class="tb-btn tb-btn-gray" onclick="document.getElementById('folderTxtInput').click()">📂 導入 TXT 資料夾</button>
+                    </div>
+                    <div class="concat-toolbar-right">
+                        <button id="sortAscBtn"  class="tb-btn tb-btn-outline active" onclick="ccatResort('asc')">↑ 昇序</button>
+                        <button id="sortDescBtn" class="tb-btn tb-btn-outline"        onclick="ccatResort('desc')">↓ 降序</button>
+                        <button class="tb-btn tb-btn-danger" onclick="ccatClearQueue()">🗑️ 清空佇列</button>
+                    </div>
+                </div>
+
+                <div id="folderImportStatus" style="display:none;margin-bottom:10px;padding:8px 14px;background:#f3e5f5;border-radius:6px;font-size:13px;color:#6c3483;border-left:3px solid #8e44ad;"></div>
+
+                <!-- 佇列 Table -->
+                <div style="overflow-x:auto;border-radius:8px;border:1px solid #ddd;">
+                    <table class="queue-table">
+                        <thead>
+                            <tr>
+                                <th style="width:36px;"></th>
+                                <th style="width:50px;">順序</th>
+                                <th>檔名 (.txt)</th>
+                                <th>品名 (內部辨識)</th>
+                                <th>長度 (L)</th>
+                                <th>N 編號範圍</th>
+                                <th>段落數/件</th>
+                                <th style="width:160px;">加工數量 (PCS)</th>
+                                <th style="width:70px;">刪除</th>
+                            </tr>
+                        </thead>
+                        <tbody id="concatQueueBody">
+                            <tr class="empty-row"><td colspan="9">尚未匯入任何工件，請使用「導入 TXT 資料夾」或「載入範例清單」</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 統計 -->
+                <div class="concat-stats">
+                    <div class="stat-chip">工件種類：<strong id="stat_count">0</strong> 筆</div>
+                    <div class="stat-chip">累計加工總數：<strong id="stat_total_pcs">0</strong> PCS</div>
+                    <div class="stat-chip">全域 N 碼：<strong id="stat_nrange">—</strong></div>
+                </div>
+            </div>
+
+            <!-- N碼對照表 -->
+            <div class="concat-section">
+                <div class="preview-title">最終產出 N 碼對照表（對齊機台操作）</div>
+                <div style="overflow-x:auto;border-radius:8px;border:1px solid #e1bee7;">
+                    <table class="n-table-preview">
+                        <thead>
+                            <tr><th>順序</th><th>檔名</th><th>品名</th><th>對應 N 碼</th><th>工序說明</th></tr>
+                        </thead>
+                        <tbody id="nTableBody">
+                            <tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">佇列為空</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 輸出 -->
+            <div class="concat-section" style="text-align:center;">
+                <div style="max-width:500px;margin:0 auto 14px auto;text-align:left;">
+                    <label for="ccatCustomName" style="display:block;font-size:13px;color:#1c2f4a;font-weight:bold;margin-bottom:6px;">
+                        <span class="step-num-purple" style="width:22px;height:22px;font-size:12px;">2</span>
+                        自定義檔名
+                        <span style="font-weight:normal;color:#888;font-size:12px;">（將套用至串接程式 與 對照表）</span>
+                    </label>
+                    <input type="text" id="ccatCustomName" placeholder="例如：A棟立面、12F-N側..." 
+                        style="width:100%;padding:10px 14px;font-size:14px;border:2px solid #e1bee7;border-radius:6px;outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+                        onfocus="this.style.borderColor='#8e44ad'" onblur="this.style.borderColor='#e1bee7'">
+                    <div style="margin-top:6px;font-size:12px;color:#6c3483;">
+                        📄 串接程式：<code id="previewTxtName" style="background:#f3e5f5;padding:2px 6px;border-radius:3px;">{自定義名稱}串接程式.TXT</code>
+                        　　📊 對照表：<code id="previewCsvName" style="background:#f3e5f5;padding:2px 6px;border-radius:3px;">{自定義名稱}對照表.csv</code>
+                    </div>
+                </div>
+                <button id="ccatGenBtn" class="btn-generate-purple" style="max-width:500px;margin:0 auto;" disabled onclick="ccatGenerate()">
+                    ⚡ 生成串接 G-CODE + N碼對照表
+                </button>
+                <div id="ccatOutputMsg" style="margin-top:12px;font-size:13px;"></div>
+            </div>
+
+        </div>
+    </div><!-- /panel-b -->
+
+</div><!-- /container -->
+
+<script>
+/* ==========================================================
+   MODE SWITCH
+   ========================================================== */
+function switchMode(m) {
+    ['a','b'].forEach(x => {
+        document.getElementById('panel-' + x).classList.toggle('active', x === m);
+        document.getElementById('tab-' + x).classList.toggle('active', x === m);
+        document.getElementById('tab-' + x).classList.toggle('inactive', x !== m);
+    });
+}
+
+/* ==========================================================
+   TOAST
+   ========================================================== */
+function showToast(msg, type = 'ok') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (type === 'error' ? ' error' : '');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+/* ==========================================================
+   MODE A — 生成 G-CODE
+   ========================================================== */
+let coordinates35 = [];
+let coordinates42 = [];
+
+function onToggleChange() {
+    const n1 = document.getElementById('toggle-n1').checked;
+    const n2 = document.getElementById('toggle-n2').checked;
+    if (!n2) {
+        document.getElementById('toggle-n3').checked = false;
+        document.getElementById('toggle-n3').disabled = true;
+    } else {
+        document.getElementById('toggle-n3').disabled = false;
+    }
+    const n3 = document.getElementById('toggle-n3').checked && n2;
+    setRowStyle('n1', n1); setRowStyle('n2', n2); setRowStyle('n3', n3);
+    setTableStatus('n1', n1); setTableStatus('n2', n2); setTableStatus('n3', n3);
+    document.getElementById('box-preview35').classList.toggle('disabled', !n1);
+    document.getElementById('box-preview42').classList.toggle('disabled', !n2);
+    document.getElementById('warn-n3').style.display  = !n2 ? 'block' : 'none';
+    document.getElementById('warn-all').style.display = (!n1 && !n2) ? 'block' : 'none';
+}
+function setRowStyle(seg, isOn) {
+    document.getElementById('row-' + seg).classList.toggle('off', !isOn);
+    const b = document.getElementById('badge-' + seg);
+    b.textContent = isOn ? 'ON' : 'OFF';
+    b.className   = isOn ? 'badge-on' : 'badge-off';
+}
+function setTableStatus(seg, isOn) {
+    const td = document.getElementById('td-' + seg + '-status');
+    const tr = document.getElementById('tr-' + seg);
+    td.textContent = isOn ? '✔ 啟用' : '✘ 停用';
+    td.style.color = isOn ? '#27ae60' : '#aaa';
+    tr.classList.toggle('disabled-row', !isOn);
+}
+
+function handlePaste() { setTimeout(processCoordinates, 100); }
+
+function parseProductInfo() {
+    const input = document.getElementById('productNameParser').value.trim();
+    const match = input.match(/^(.+?)\s+L\s*=\s*([0-9.]+)/i);
+    if (match) {
+        document.getElementById('productName').value = match[1].trim();
+        document.getElementById('workpieceLength').value = match[2].trim();
+    }
+}
+
+function showCadMessage(msg, isError = true) {
+    const el = document.getElementById('cadMessage');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.color = isError ? '#e74c3c' : '#27ae60';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('cadCoordinates').value = text;
+        processCoordinates();
+    } catch { showCadMessage('無法讀取剪貼簿'); }
+}
+
+function sortLogic(data, xOrder) {
+    return [...data].sort((a, b) => {
+        if (a.x !== b.x) return xOrder === 'asc' ? a.x - b.x : b.x - a.x;
+        return b.y - a.y;
+    });
+}
+
+function processCoordinates() {
+    const cadInput = document.getElementById('cadCoordinates').value.trim();
+    if (!cadInput) return showCadMessage('請輸入資料');
+    try {
+        let parsed = JSON.parse(cadInput);
+        let all = parsed.coordinates || (Array.isArray(parsed) ? parsed : []);
+        coordinates35 = []; coordinates42 = [];
+        all.forEach(c => {
+            const d = parseFloat(c.diameter);
+            const obj = { x: parseFloat(c.x), y: parseFloat(c.y) };
+            if (d === 3 || d === 3.5) coordinates35.push(obj);
+            else if (d === 4.2)       coordinates42.push(obj);
+        });
+        updatePreviews();
+        showCadMessage(`✔ 3.5mm: ${coordinates35.length} 孔 / 4.2mm: ${coordinates42.length} 孔`, false);
+    } catch { showCadMessage('JSON 格式錯誤'); }
+}
+
+function updatePreviews() {
+    const n1Order  = document.getElementById('n1SortOrder').value;
+    const sorted35 = sortLogic(coordinates35, n1Order);
+    const sorted42 = sortLogic(coordinates42, 'desc');
+    document.getElementById('preview35').innerHTML = sorted35.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
+    document.getElementById('preview42').innerHTML = sorted42.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
+}
+
+function generateGCode() {
+    const useN1 = document.getElementById('toggle-n1').checked;
+    const useN2 = document.getElementById('toggle-n2').checked;
+    const useN3 = document.getElementById('toggle-n3').checked && useN2;
+    if (!useN1 && !useN2) return alert('所有段落均已關閉，無法生成');
+    if (useN1 && coordinates35.length === 0) return alert('N1 已啟用但無 3.5mm 座標');
+    if (useN2 && coordinates42.length === 0) return alert('N2 已啟用但無 4.2mm 座標');
+
+    const productName = document.getElementById('productName').value.trim();
+    const L           = document.getElementById('workpieceLength').value;
+    const n1Order     = document.getElementById('n1SortOrder').value;
+    const listN1 = sortLogic(coordinates35, n1Order);
+    const listN2 = sortLogic(coordinates42, 'desc');
+    const listN3 = sortLogic(coordinates42, 'asc');
+
+    let g = `(${productName})\n(DR)\n(L=${L})\n(G54)\n(座標左上)\n\n`;
+
+    if (useN1 && listN1.length > 0) {
+        g += `N1\nT10(3.5mm dr)\nG0G90G54X${listN1[0].x.toFixed(2)} Y${listN1[0].y.toFixed(2)} M3S3200\nG43H10Z100.\nZ60.M8\nG98G81Z-7.R5.F150\n`;
+        for (let i = 1; i < listN1.length; i++) g += `X${listN1[i].x.toFixed(2)} Y${listN1[i].y.toFixed(2)}\n`;
+        g += `G0G90Z100.M9\nM5\n\n`;
+    }
+    if (useN2 && listN2.length > 0) {
+        g += `N2\nT11(4.2mm dr)\nG0G90G54X${listN2[0].x.toFixed(2)} Y${listN2[0].y.toFixed(2)} M3S3000\nG43H11Z100.\nZ95.M8\nG98G81Z-9.R5.F100\n`;
+        for (let i = 1; i < listN2.length; i++) g += `X${listN2[i].x.toFixed(2)} Y${listN2[i].y.toFixed(2)}\n`;
+        g += `G0G90Z95.M9\nM5\n\n`;
+    }
+    if (useN3 && listN3.length > 0) {
+        g += `N3\nT12(M5 TAP)\nG0G90G54X${listN3[0].x.toFixed(2)} Y${listN3[0].y.toFixed(2)} M3S200\nG43H12Z100.\nZ95.M8\nM29\nG95G84Z-10.R5.F0.8\n`;
+        for (let i = 1; i < listN3.length; i++) g += `X${listN3[i].x.toFixed(2)} Y${listN3[i].y.toFixed(2)}\n`;
+        g += `G0G90Z150.M9\nM5\n\n`;
+    }
+    g += `G0G90X-150.\nT10\nM30`;
+
+    document.getElementById('gcodeOutput').value = g;
+    saveGCode();
+    setTimeout(clearAll, 500);
+}
+
+function copyGCode() {
+    const out = document.getElementById('gcodeOutput');
+    out.select(); document.execCommand('copy'); showToast('已複製到剪貼簿');
+}
+
+function saveGCode() {
+    const gcode = document.getElementById('gcodeOutput').value;
+    const productName = document.getElementById('productName').value.trim() || 'TEMP';
+    if (!gcode) return alert('請先生成 G-CODE');
+    const blob = new Blob([gcode], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${productName}.txt`;
+    link.click();
+}
+
+function clearAll() {
+    ['productNameParser','productName','workpieceLength','cadCoordinates','gcodeOutput'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('preview35').innerHTML = '';
+    document.getElementById('preview42').innerHTML = '';
+    coordinates35 = []; coordinates42 = [];
+}
+
+/* ==========================================================
+   MODE B — 串接 G-CODE
+   ========================================================== */
+let concatQueue = [];
+let ccatCurrentOrder = 'asc';
+let dragSrcIdx = null;
+
+/* ---- 排序鍵 ---- */
+function extractSortNumber(filename) {
+    const name = filename.replace(/\.txt$/i, '');
+    const nums = name.match(/\d+/g);
+    return nums ? parseInt(nums[nums.length - 1], 10) : 0;
+}
+
+/* ---- 排序按鈕狀態 ---- */
+function ccatUpdateSortBtns() {
+    const aBtn = document.getElementById('sortAscBtn');
+    const dBtn = document.getElementById('sortDescBtn');
+    aBtn.classList.toggle('active', ccatCurrentOrder === 'asc');
+    dBtn.classList.toggle('active', ccatCurrentOrder === 'desc');
+}
+
+function ccatResort(order) {
+    ccatCurrentOrder = order;
+    concatQueue.sort((a, b) => order === 'asc' ? a.sortNum - b.sortNum : b.sortNum - a.sortNum);
+    ccatUpdateSortBtns();
+    ccatRenderQueue();
+}
+
+/* ---- 範例資料 ---- */
+function ccatLoadExample() {
+    concatQueue = [
+        {
+            name: '19F-021', length: '861.9', source: '19F-021.txt', sortNum: 21, qty: 2,
+            segments: [
+                { nLabel: 'N1', lines: ['N1','T10(3.5mm dr)','G0G90G54X150.00 Y-10.00 M3S3200','G43H10Z100.','Z60.M8','G98G81Z-7.R5.F150','X250.00 Y-10.00','G0G90Z100.M9','M5','','G0G90X-150.','T10','M30'] }
+            ]
+        },
+        {
+            name: '19F-022', length: '861.9', source: '19F-022.txt', sortNum: 22, qty: 1,
+            segments: [
+                { nLabel: 'N1', lines: ['N1','T10(3.5mm dr)','G0G90G54X120.00 Y-10.00 M3S3200','G43H10Z100.','Z60.M8','G98G81Z-7.R5.F150','G0G90Z100.M9','M5','','M30'] },
+                { nLabel: 'N2', lines: ['N2','T11(4.2mm dr)','G0G90G54X120.00 Y-10.00 M3S3000','G43H11Z100.','Z95.M8','G98G81Z-9.R5.F100','G0G90Z95.M9','M5','','G0G90X-150.','T10','M30'] }
+            ]
+        },
+        {
+            name: '19F-023', length: '861.9', source: '19F-023.txt', sortNum: 23, qty: 4,
+            segments: [
+                { nLabel: 'N1', lines: ['N1','T10(3.5mm dr)','G0G90G54X200.00 Y-10.00 M3S3200','G43H10Z100.','Z60.M8','G98G81Z-7.R5.F150','G0G90Z100.M9','M5','','G0G90X-150.','T10','M30'] }
+            ]
         }
+    ];
+    ccatCurrentOrder = 'asc';
+    ccatUpdateSortBtns();
+    ccatRenderQueue();
+    showToast('✅ 已載入範例串接清單（3 筆工件）');
+}
 
-        function parseProductInfo() {
-            const input = document.getElementById('productNameParser').value.trim();
-            if (!input) return;
+/* ---- 數量控制 ---- */
+function adjustQty(idx, delta) {
+    concatQueue[idx].qty = Math.max(1, (concatQueue[idx].qty || 1) + delta);
+    ccatRenderQueue();
+}
+function updateQty(idx, val) {
+    concatQueue[idx].qty = Math.max(1, parseInt(val) || 1);
+    ccatRenderQueue();
+}
 
-            // 格式: "6190710L    L=3774.32"
-            // 使用正則表達式解析
-            const match = input.match(/^(.+?)\s+L\s*=\s*([0-9.]+)/i);
+/* ---- 刪除 / 清空 ---- */
+function ccatRemoveFromQueue(idx) {
+    concatQueue.splice(idx, 1);
+    ccatRenderQueue();
+}
+function ccatClearQueue() {
+    if (concatQueue.length === 0) return;
+    if (!confirm(`確定清空全部 ${concatQueue.length} 筆佇列？`)) return;
+    concatQueue = [];
+    ccatRenderQueue();
+}
 
-            if (match) {
-                const productName = match[1].trim();
-                const length = match[2].trim();
+/* ---- 拖拉邏輯 ---- */
+function handleDragStart(e) {
+    dragSrcIdx = parseInt(this.dataset.idx);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function handleDragOver(e) {
+    e.preventDefault();
+    // 清除所有 indicator
+    document.querySelectorAll('#concatQueueBody tr').forEach(r => {
+        r.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    const rect = this.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    if (e.clientY < mid) this.classList.add('drag-over-top');
+    else                  this.classList.add('drag-over-bottom');
+}
+function handleDragLeave() {
+    this.classList.remove('drag-over-top', 'drag-over-bottom');
+}
+function handleDrop(e) {
+    e.stopPropagation();
+    const toIdx   = parseInt(this.dataset.idx);
+    const rect    = this.getBoundingClientRect();
+    const after   = e.clientY >= rect.top + rect.height / 2;
+    this.classList.remove('drag-over-top', 'drag-over-bottom');
+    if (dragSrcIdx === null || dragSrcIdx === toIdx) return;
 
-                document.getElementById('productName').value = productName;
-                document.getElementById('workpieceLength').value = length;
+    const item = concatQueue.splice(dragSrcIdx, 1)[0];
+    const insertAt = after ? toIdx : toIdx;
+    // adjust for removed item
+    const adjustedTo = dragSrcIdx < toIdx
+        ? (after ? toIdx : toIdx - 1)
+        : (after ? toIdx + 1 : toIdx);
+    concatQueue.splice(Math.max(0, adjustedTo), 0, item);
+    dragSrcIdx = null;
+    ccatRenderQueue();
+}
+function handleDragEnd() {
+    this.classList.remove('dragging');
+    document.querySelectorAll('#concatQueueBody tr').forEach(r => {
+        r.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    dragSrcIdx = null;
+}
+
+/* ---- 主渲染函數 ---- */
+function ccatRenderQueue() {
+    const tbody = document.getElementById('concatQueueBody');
+    const nBody = document.getElementById('nTableBody');
+
+    if (concatQueue.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">尚未匯入任何工件，請使用「導入 TXT 資料夾」或「載入範例清單」</td></tr>';
+        nBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">佇列為空</td></tr>';
+        document.getElementById('stat_count').textContent     = '0';
+        document.getElementById('stat_total_pcs').textContent = '0';
+        document.getElementById('stat_nrange').textContent    = '—';
+        document.getElementById('queueCountBadge').textContent = '0 筆';
+        document.getElementById('ccatGenBtn').disabled = true;
+        return;
+    }
+
+    tbody.innerHTML = '';
+    const nRows = [];
+    let globalN = 1;
+    let nTableSeq = 1;
+
+    concatQueue.forEach((item, i) => {
+        const qty       = item.qty || 1;
+        const segsPerPc = item.segments.length;
+        const totalSegs = segsPerPc * qty;
+        const nStart    = globalN;
+        const nEnd      = globalN + totalSegs - 1;
+        const nRange    = totalSegs > 1 ? `N${nStart} ~ N${nEnd}` : `N${nStart}`;
+        globalN += totalSegs;
+
+        const tr = document.createElement('tr');
+        tr.className = 'draggable-row';
+        tr.draggable = true;
+        tr.dataset.idx = i;
+        tr.addEventListener('dragstart',  handleDragStart);
+        tr.addEventListener('dragover',   handleDragOver);
+        tr.addEventListener('dragleave',  handleDragLeave);
+        tr.addEventListener('drop',       handleDrop);
+        tr.addEventListener('dragend',    handleDragEnd);
+
+        tr.innerHTML = `
+            <td><span class="drag-handle" title="拖拉調整順序">⠿</span></td>
+            <td style="font-weight:bold;color:#8e44ad;">${i + 1}</td>
+            <td style="text-align:left;font-family:'Consolas',monospace;">${item.source}</td>
+            <td style="font-weight:bold;color:#1c2f4a;">${item.name}${qty > 1 ? ` <span style="color:#8e44ad;font-size:13px;">×${qty}</span>` : ''}</td>
+            <td>${item.length}</td>
+            <td style="color:#e67e22;font-weight:bold;font-family:'Consolas',monospace;">${nRange}</td>
+            <td>${segsPerPc} 段/件</td>
+            <td>
+                <div class="qty-wrap">
+                    <button class="qty-btn" onclick="adjustQty(${i},-1)">−</button>
+                    <input type="number" class="qty-input" value="${qty}" min="1"
+                        onchange="updateQty(${i},this.value)" onblur="updateQty(${i},this.value)">
+                    <button class="qty-btn" onclick="adjustQty(${i},1)">+</button>
+                </div>
+            </td>
+            <td><button class="del-btn" onclick="ccatRemoveFromQueue(${i})">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        // N碼對照表列 — 每個 PCS 一行，N範圍合併顯示
+        let rowN = nStart;
+        for (let p = 1; p <= qty; p++) {
+            const pcsNStart = rowN;
+            const pcsNEnd   = rowN + segsPerPc - 1;
+            const pcsNLabel = segsPerPc > 1
+                ? `N${pcsNStart} ~ N${pcsNEnd}`
+                : `N${pcsNStart}`;
+            const segLabels = item.segments.map(s => s.nLabel).join(' + ');
+            nRows.push(`
+                <tr>
+                    <td style="color:#999;">${nTableSeq++}</td>
+                    <td style="text-align:left;font-family:'Consolas',monospace;">${item.source}</td>
+                    <td style="font-weight:bold;">${item.name} <span style="color:#8e44ad;font-size:12px;">${p}/${qty}</span></td>
+                    <td style="color:#8e44ad;font-weight:bold;font-family:'Consolas',monospace;">${pcsNLabel}</td>
+                    <td style="text-align:left;">第 ${p}/${qty} 件（${segLabels}）</td>
+                </tr>
+            `);
+            rowN += segsPerPc;
+        }
+    });
+
+    nBody.innerHTML = nRows.join('');
+
+    // 統計
+    const totalPcs  = concatQueue.reduce((s, i) => s + (i.qty||1), 0);
+    const totalSegs = globalN - 1;
+    document.getElementById('stat_count').textContent      = concatQueue.length;
+    document.getElementById('stat_total_pcs').textContent  = totalPcs;
+    document.getElementById('stat_nrange').textContent     = `N1 ～ N${totalSegs}`;
+    document.getElementById('queueCountBadge').textContent = `${concatQueue.length} 筆`;
+    document.getElementById('ccatGenBtn').disabled = false;
+}
+
+/* ---- TXT 解析 ---- */
+function parseTxtFile(filename, content) {
+    const rawName = filename.replace(/\.txt$/i, '');
+    const lines   = content.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+    const nPat    = /^N(\d+)\s*$/;
+    const segments = [];
+    let currentSeg = null, parsedName = rawName, parsedLength = '';
+
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!parsedLength && /^\(L=([0-9.]+)\)/.test(line))
+            parsedLength = line.match(/^\(L=([0-9.]+)\)/)[1];
+        if (/^\((?!DR|G54|座標|L=)(.+)\)$/.test(line) && parsedName === rawName) {
+            const m = line.match(/^\((.+)\)$/);
+            if (m) parsedName = m[1].trim();
+        }
+        if (nPat.test(line)) {
+            if (currentSeg) segments.push(currentSeg);
+            currentSeg = { nLabel: line, lines: [line] };
+            continue;
+        }
+        if (currentSeg) {
+            currentSeg.lines.push(line);
+            if (/^M30\s*$/.test(line) || /^M1\s*$/.test(line)) {
+                segments.push(currentSeg); currentSeg = null;
             }
         }
+    }
+    if (currentSeg) segments.push(currentSeg);
+    return { name: parsedName, length: parsedLength, segments, source: filename };
+}
 
-        function showCadMessage(msg) {
-            const el = document.getElementById('cadMessage');
-            el.textContent = msg;
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 3000);
-        }
+function readFileAsText(file) {
+    return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.onerror = () => rej(new Error('讀取失敗'));
+        r.readAsText(file, 'UTF-8');
+    });
+}
 
-        async function pasteFromClipboard() {
-            try {
-                const text = await navigator.clipboard.readText();
-                document.getElementById('cadCoordinates').value = text;
-                processCoordinates();
-            } catch (err) { showCadMessage('無法讀取剪貼簿'); }
-        }
+async function importTxtFolder(files) {
+    const txtFiles = Array.from(files).filter(f => f.name.match(/\.txt$/i) && !f.name.startsWith('~'));
+    if (txtFiles.length === 0) return showToast('資料夾中沒有 .TXT 檔案', 'error');
 
-        // 通用排序函數：先排 X，若 X 相同則 Y 由大至小
-        function sortLogic(data, xOrder) {
-            return [...data].sort((a, b) => {
-                if (a.x !== b.x) {
-                    return xOrder === 'asc' ? a.x - b.x : b.x - a.x;
-                }
-                // Y 由大到小 (例如 -10 > -31 > -52)
-                return b.y - a.y;
+    const statusEl = document.getElementById('folderImportStatus');
+    statusEl.style.display = 'block';
+    statusEl.textContent   = `⏳ 讀取中... 共 ${txtFiles.length} 個 TXT 檔案`;
+
+    let ok = 0, fail = 0;
+    for (const file of txtFiles) {
+        try {
+            const text   = await readFileAsText(file);
+            const parsed = parseTxtFile(file.name, text);
+            if (parsed.segments.length === 0) { fail++; continue; }
+            concatQueue.push({
+                name:     parsed.name,
+                length:   parsed.length || '—',
+                segments: parsed.segments,
+                source:   file.name,
+                sortNum:  extractSortNumber(file.name),
+                qty:      1
+            });
+            ok++;
+        } catch { fail++; }
+    }
+
+    statusEl.textContent = `✔ 已匯入 ${ok} 個程式${fail > 0 ? `，${fail} 個失敗` : ''}`;
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+
+    concatQueue.sort((a, b) => a.sortNum - b.sortNum);
+    ccatCurrentOrder = 'asc';
+    ccatUpdateSortBtns();
+    ccatRenderQueue();
+    showToast(`✔ 資料夾匯入完成：${ok} 筆（昇序排列）`);
+}
+
+/* ---- 串接生成 ---- */
+function rewriteNLine(segLines, newN) {
+    return segLines.map(line => /^N\d+\s*$/.test(line.trim()) ? `N${newN}` : line);
+}
+
+function ccatGenerate() {
+    if (concatQueue.length === 0) return;
+
+    // 展開成「PCS 單位」的區塊，每個 PCS 包含該料號所有 segments
+    // 結構：{ pcsBlocks: [ { name, filename, length, pcsNum, qty, segments:[{nLabel,lines}] } ] }
+    const pcsBlocks = [];
+    concatQueue.forEach(item => {
+        const qty = item.qty || 1;
+        for (let p = 1; p <= qty; p++) {
+            pcsBlocks.push({
+                name:     item.name,
+                filename: item.source.replace(/\.txt$/i, ''),
+                length:   item.length,
+                pcsNum:   p,
+                qty:      qty,
+                segments: item.segments   // 原始 segments 陣列參考
             });
         }
+    });
 
-        function processCoordinates() {
-            const cadInput = document.getElementById('cadCoordinates').value.trim();
-            if (!cadInput) return showCadMessage('請輸入資料');
+    // 計算每個 PCS block 的起始 N 號
+    let globalN = 1;
+    const blocksWithN = pcsBlocks.map(block => {
+        const start = globalN;
+        globalN += block.segments.length;
+        return { ...block, nStart: start };
+    });
 
-            try {
-                let parsedData = JSON.parse(cadInput);
-                let all = parsedData.coordinates || (Array.isArray(parsedData) ? parsedData : []);
+    const total = globalN - 1;  // 總 N 段數
+    const parts = [];
 
-                coordinates35 = [];
-                coordinates42 = [];
+    blocksWithN.forEach((block, bi) => {
+        const isLastBlock = bi === blocksWithN.length - 1;
+        const qty = block.qty;
+        const p   = block.pcsNum;
 
-                all.forEach(coord => {
-                    const diameter = parseFloat(coord.diameter);
-                    const obj = { x: parseFloat(coord.x), y: parseFloat(coord.y) };
-                    if (diameter === 3 || diameter === 3.5) coordinates35.push(obj);
-                    else if (diameter === 4.2) coordinates42.push(obj);
-                });
+        // M1 後的品名備註行（含第幾件）
+        const commentLine = `(--- ${block.filename} / ${block.name}--${p}/${qty}--L=${block.length} ---)`;
 
-                updatePreviews();
-                showCadMessage('處理完成，請查看預覽清單');
-            } catch (e) { showCadMessage('JSON 格式錯誤'); }
-        }
+        block.segments.forEach((seg, si) => {
+            const newN         = block.nStart + si;
+            const isLastSegOfBlock = si === block.segments.length - 1;
+            const isVeryLast   = isLastBlock && isLastSegOfBlock;
 
-        function updatePreviews() {
-            const n1Order = document.getElementById('n1SortOrder').value;
-            const sorted35 = sortLogic(coordinates35, n1Order);
-            const sorted42 = sortLogic(coordinates42, 'desc'); // N2 預覽顯示降序
+            // 過濾掉原有的 M30 / M1
+            const cleanLines = seg.lines.filter(l => !/^M30\s*$/.test(l.trim()) && !/^M1\s*$/.test(l.trim()));
+            const rewritten  = rewriteNLine(cleanLines, newN);
 
-            document.getElementById('preview35').innerHTML = sorted35.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
-            document.getElementById('preview42').innerHTML = sorted42.map(c => `<div>X${c.x.toFixed(2)} Y${c.y.toFixed(2)}</div>`).join('');
-        }
+            let segPart = rewritten.join('\n');
 
-        function generateGCode() {
-            const productName = document.getElementById('productName').value.trim();
-            const L = document.getElementById('workpieceLength').value;
-            const n1Order = document.getElementById('n1SortOrder').value;
-
-            if (coordinates35.length === 0 && coordinates42.length === 0) return alert('無座標資料');
-
-            // 執行各段落專屬排序
-            const listN1 = sortLogic(coordinates35, n1Order);
-            const listN2 = sortLogic(coordinates42, 'desc'); // N2 降序
-            const listN3 = sortLogic(coordinates42, 'asc');  // N3 昇序回到頭端
-
-            let g = `(${productName})\n(DR)\n(L=${L})\n(G54)\n(座標左上)\n\n`;
-
-            if (listN1.length > 0) {
-                g += `N1\nT10(3.5mm dr)\nG0G90G54X${listN1[0].x.toFixed(2)} Y${listN1[0].y.toFixed(2)} M3S3200\nG43H10Z100.\nZ60.M8\nG98G81Z-7.R5.F150\n`;
-                for (let i = 1; i < listN1.length; i++) g += `X${listN1[i].x.toFixed(2)} Y${listN1[i].y.toFixed(2)}\n`;
-                g += `G0G90Z100.M9\nM5\n\n`;
+            if (isVeryLast) {
+                // 最後一個 segment：直接收尾
+                segPart += '\n\nG0G90X-150.\nT10\nM30';
+            } else if (isLastSegOfBlock) {
+                // 這個 PCS 的最後一個 segment → 加 M1 + 下一筆備註
+                const nextBlock = blocksWithN[bi + 1];
+                const nextComment = `(--- ${nextBlock.filename} / ${nextBlock.name}--${nextBlock.pcsNum}/${nextBlock.qty}--L=${nextBlock.length} ---)`;
+                segPart += `\nM1\n${nextComment}`;
             }
+            // 同一 PCS 內的非最後 segment → 不加任何結尾，直接連接下一段
 
-            if (listN2.length > 0) {
-                g += `N2\nT11(4.2mm dr)\nG0G90G54X${listN2[0].x.toFixed(2)} Y${listN2[0].y.toFixed(2)} M3S3000\nG43H11Z100.\nZ95.M8\nG98G81Z-9.R5.F100\n`;
-                for (let i = 1; i < listN2.length; i++) g += `X${listN2[i].x.toFixed(2)} Y${listN2[i].y.toFixed(2)}\n`;
-                g += `G0G90Z95.M9\nM5\n\n`;
+            parts.push(segPart);
+        });
+    });
 
-                g += `N3\nT12(M5 TAP)\nG0G90G54X${listN3[0].x.toFixed(2)} Y${listN3[0].y.toFixed(2)} M3S200\nG43H12Z100.\nZ95.M8\nM29\nG95G84Z-10.R5.F0.8\n`;
-                for (let i = 1; i < listN3.length; i++) g += `X${listN3[i].x.toFixed(2)} Y${listN3[i].y.toFixed(2)}\n`;
-                g += `G0G90Z150.M9\nM5\n\n`;
+    // 在最前面加上第一筆的品名備註
+    const firstBlock = blocksWithN[0];
+    const firstComment = `(--- ${firstBlock.filename} / ${firstBlock.name}--${firstBlock.pcsNum}/${firstBlock.qty}--L=${firstBlock.length} ---)`;
+    const finalGCode = firstComment + '\n' + parts.join('\n');
+    const now = new Date();
+    const dateStr = `${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+
+    // 取得自定義名稱（去除前後空白），若為空則 fallback 到日期格式
+    const customNameRaw = (document.getElementById('ccatCustomName')?.value || '').trim();
+    // 過濾檔名禁用字元 \ / : * ? " < > |
+    const customName = customNameRaw.replace(/[\\\/:*?"<>|]/g, '_');
+    const txtFilename = customName
+        ? `${customName}串接程式.TXT`
+        : `620_concat_${dateStr}.txt`;
+
+    const blob = new Blob([finalGCode], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = txtFilename;
+    link.click();
+
+    setTimeout(() => { generateNTableCsv(dateStr, customName); }, 400);
+
+    document.getElementById('ccatOutputMsg').innerHTML =
+        `<span style="color:#27ae60;font-weight:bold;">✔ 已下載：${txtFilename} 及 N碼對照表</span>`;
+    showToast(`✔ 串接完成！共 ${total} 個 N 段落`);
+}
+
+function generateNTableCsv(dateStr, customName) {
+    const rows = [['順序','檔名','品名','長度(mm)','對應N碼','PCS']];
+    let globalN = 1;
+    let seq = 1;
+    concatQueue.forEach(item => {
+        const qty    = item.qty || 1;
+        const fname  = item.source.replace(/\.txt$/i, '');
+        const segs   = item.segments.length;
+        for (let p = 1; p <= qty; p++) {
+            const nStart = globalN;
+            const nEnd   = globalN + segs - 1;
+            const nLabel = segs > 1 ? `N${nStart}~N${nEnd}` : `N${nStart}`;
+            rows.push([seq++, fname, item.name, item.length, nLabel, `(${p}/${qty})`]);
+            globalN += segs;
+        }
+    });
+    const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = customName
+        ? `${customName}對照表.csv`
+        : `620_N對照表_${dateStr}.csv`;
+    link.click();
+}
+
+/* ==========================================================
+   INIT
+   ========================================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('folderTxtInput').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            importTxtFolder(e.target.files);
+            e.target.value = '';
+        }
+    });
+
+    // 自定義名稱即時預覽
+    const customNameInput = document.getElementById('ccatCustomName');
+    const previewTxt = document.getElementById('previewTxtName');
+    const previewCsv = document.getElementById('previewCsvName');
+    if (customNameInput && previewTxt && previewCsv) {
+        customNameInput.addEventListener('input', function() {
+            const v = this.value.trim().replace(/[\\\/:*?"<>|]/g, '_');
+            if (v) {
+                previewTxt.textContent = `${v}串接程式.TXT`;
+                previewCsv.textContent = `${v}對照表.csv`;
+            } else {
+                previewTxt.textContent = '{自定義名稱}串接程式.TXT';
+                previewCsv.textContent = '{自定義名稱}對照表.csv';
             }
-
-            g += `G0G90X-150.\nT10\nM30`;
-            document.getElementById('gcodeOutput').value = g;
-
-            // 自動儲存檔案
-            saveGCode();
-
-            // 延遲後自動清空
-            setTimeout(function() {
-                clearAll();
-            }, 500);
-        }
-
-        function copyGCode() {
-            const out = document.getElementById('gcodeOutput');
-            out.select();
-            document.execCommand('copy');
-            alert('已複製');
-        }
-
-        function saveGCode() {
-            const gcode = document.getElementById('gcodeOutput').value;
-            const productName = document.getElementById('productName').value.trim() || "TEMP";
-            if (!gcode) return alert('請先生成 G-CODE');
-
-            const filename = `${productName}.txt`;
-            const blob = new Blob([gcode], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-        }
-
-        function clearAll() {
-            document.getElementById('productNameParser').value = '';
-            document.getElementById('productName').value = '';
-            document.getElementById('workpieceLength').value = '';
-            document.getElementById('cadCoordinates').value = '';
-            document.getElementById('gcodeOutput').value = '';
-            document.getElementById('preview35').innerHTML = '';
-            document.getElementById('preview42').innerHTML = '';
-            coordinates35 = [];
-            coordinates42 = [];
-        }
-    </script>
+        });
+    }
+});
+</script>
 </body>
 </html>
