@@ -837,8 +837,9 @@ let fcatOrder='asc';
 let fcatDragIdx=null;
 
 function fcatExtractSortNumber(filename){
-  const nums=String(filename||'').replace(/\.txt$/i,'').match(/\d+/g);
-  return nums?parseInt(nums[nums.length-1],10):0;
+  const base=String(filename||'').replace(/\.txt$/i,'');
+  const prefix=base.match(/^\s*(\d+)\s*_/);
+  return prefix?parseInt(prefix[1],10):null;
 }
 function fcatReadFileAsText(file){
   return new Promise((resolve,reject)=>{
@@ -930,7 +931,12 @@ function fcatSetSortBtns(){
 }
 function fcatResort(order){
   fcatOrder=order;
-  fcatQueue.sort((a,b)=>order==='asc'?a.sortNum-b.sortNum:b.sortNum-a.sortNum);
+  fcatQueue.sort((a,b)=>{
+    const aValid=Number.isFinite(a.sortNum), bValid=Number.isFinite(b.sortNum);
+    if(aValid!==bValid) return aValid?-1:1;
+    if(!aValid) return 0;
+    return order==='asc'?a.sortNum-b.sortNum:b.sortNum-a.sortNum;
+  });
   fcatSetSortBtns();
   fcatRender();
 }
